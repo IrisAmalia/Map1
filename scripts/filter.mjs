@@ -5,6 +5,9 @@ export const ROOMS = [2, 5];
 export const CONTRACT = /onbepaald/i;
 // Pas vanaf deze netto (kale) huur is het middenhuur of vrije sector: alles tot en met 932,93 is sociaal.
 export const MIN_RENT_EXCLUSIVE_CENTS = 93293;
+// Woningen die voorrang geven aan gezinnen of huishoudens met kinderen (bijv. "Voorrang kleine gezinnen") slaan we over.
+// De labels van een advertentie staan in PublicatieLabel, gescheiden door "~".
+export const FAMILY_PRIORITY = /voorrang.*(gezin|kind)/i;
 
 const eur = (n) => `€ ${Number(n).toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const num = (v) => (v === undefined || v === null || v === "" ? NaN : Number(v));
@@ -16,6 +19,10 @@ export function netRentCents(p) {
   if (e.NettoHuurBekend && num(e.NettoHuur) > 0) return Math.round(num(e.NettoHuur) * 100);
   if (c.PrijsMaxBekend && num(c.PrijsMax) > 0) return Math.round(num(c.PrijsMax) * 100);
   return null;
+}
+
+export function familyPriority(p) {
+  return String(p.PublicatieLabel || "").split("~").some((label) => FAMILY_PRIORITY.test(label));
 }
 
 export function describe(p) {
@@ -43,11 +50,13 @@ export function describe(p) {
     owner: e.Eigenaar || c.Eigenaar || "",
     floor: e.DetailSoort ? `${e.DetailSoort}${p.Verdieping !== "" && p.Verdieping !== undefined ? `, verdieping ${p.Verdieping}` : ""}${p.HeeftLift ? ", lift" : ""}` : "",
     label: e.EnergieLabel ? `energielabel ${e.EnergieLabel}` : "",
+    target: e.Doelgroep ? `doelgroep ${e.Doelgroep}` : "",
     ends,
   };
 }
 
-export function matches(p) {
+// Alle eisen behalve de gezinsvoorrang (apart, zodat we kunnen loggen wat we daardoor overslaan).
+export function coreMatches(p) {
   const d = describe(p);
   if (!d.owner || !OWNER.test(d.owner)) return false; // zonder eigenaar kunnen we niet bevestigen dat het jouw corporatie is
   const e = p.Eenheid || {};
@@ -61,6 +70,10 @@ export function matches(p) {
   return !/soci/i.test(d.module);
 }
 
+export function matches(p) {
+  return coreMatches(p) && !familyPriority(p);
+}
+
 export function message(p) {
   const d = describe(p);
   return {
@@ -69,7 +82,7 @@ export function message(p) {
       `${d.title}${d.place ? ", " + d.place : ""}`,
       `${d.rooms} kamers | ${d.rent}`,
       [d.module, d.contract].filter(Boolean).join(" | "),
-      [d.floor, d.label].filter(Boolean).join(" | "),
+      [d.floor, d.label, d.target].filter(Boolean).join(" | "),
       d.ends && `Reageren tot: ${d.ends}`,
     ].filter(Boolean).join("\n"),
   };

@@ -53,3 +53,19 @@ test("het bericht bevat adres, prijs, soort en reageren-tot in Nederlandse tijd"
   assert.match(body, /Vrije sector \| Onbepaalde tijd contract/);
   assert.match(body, /Reageren tot: .*23:59/); // 21:59 UTC = 23:59 in Amsterdam
 });
+
+test("woningen met voorrang voor gezinnen of kinderen worden overgeslagen", () => {
+  // Echt label uit de advertenties van 8 oktober.
+  assert.equal(matches(base(10, "1250.00", { PublicatieLabel: "Met situatiepunten~Voorrang kleine gezinnen" })), false);
+  assert.equal(matches(base(11, "1250.00", { PublicatieLabel: "Voorrang gezinnen met kinderen" })), false);
+  assert.equal(matches(base(12, "1250.00", { PublicatieLabel: "Voorrang 1 kind" })), false);
+  assert.equal(matches(base(13, "1250.00", { PublicatieLabel: "Voorrang grote gezinnen~Met situatiepunten" })), false);
+});
+
+test("andere labels blijven gewoon doorkomen", () => {
+  assert.equal(matches(base(14, "1250.00", { PublicatieLabel: "Vrije sector" })), true);
+  assert.equal(matches(base(15, "1250.00", { PublicatieLabel: "" })), true);
+  assert.equal(matches(base(16, "1250.00", { PublicatieLabel: "Met situatiepunten" })), true);
+  assert.equal(matches(base(17, "1250.00", { PublicatieLabel: "Voorrang senioren" })), true);
+  assert.equal(matches(base(18, "1250.00")), true); // geen label
+});
