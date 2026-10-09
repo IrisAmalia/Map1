@@ -76,3 +76,20 @@ test("echte labels uit het aanbod van 9 oktober (ook met spatie ervoor)", () => 
   skip.forEach((label, i) => assert.equal(matches(base(100 + i, "1250.00", { PublicatieLabel: label })), false, label));
   keep.forEach((label, i) => assert.equal(matches(base(200 + i, "1250.00", { PublicatieLabel: label })), true, label));
 });
+
+test("jongeren- en seniorenwoningen worden overgeslagen, ook zonder label via de doelgroep", () => {
+  for (const label of ["Jongerenwoning", " Jongerenwoning", "Seniorenwoning", "Seniorenwoning met voorrang GEB-indicatie", "Met situatiepunten~Seniorenwoning"]) {
+    assert.equal(matches(base(300, "1250.00", { PublicatieLabel: label })), false, label);
+  }
+  for (const doelgroep of ["Jongeren", "Senioren"]) {
+    const p = base(301, "1250.00");
+    p.Eenheid.Doelgroep = doelgroep;
+    assert.equal(matches(p), false, doelgroep);
+  }
+  const persoon = base(302, "1250.00");
+  persoon.Eenheid.Doelgroep = "Persoon";
+  assert.equal(matches(persoon), true);
+  const gezin = base(303, "1250.00");
+  gezin.Eenheid.Doelgroep = "Gezin"; // alleen "Doelgroep Gezin" is geen voorrang en geen reden om over te slaan
+  assert.equal(matches(gezin), true);
+});

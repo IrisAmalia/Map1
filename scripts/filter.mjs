@@ -22,6 +22,14 @@ export function netRentCents(p) {
   return null;
 }
 
+// Jongeren- en seniorenwoningen (leeftijdsgrenzen) slaan we ook over: op het label of in de doelgroep.
+export const AGE_RESTRICTED_LABEL = /jongerenwoning|seniorenwoning/i;
+export const AGE_RESTRICTED_TARGET = /^(jongeren|senioren)$/i;
+export function ageRestricted(p) {
+  const labels = String(p.PublicatieLabel || "").split("~");
+  return labels.some((l) => AGE_RESTRICTED_LABEL.test(l)) || AGE_RESTRICTED_TARGET.test(String((p.Eenheid || {}).Doelgroep || "").trim());
+}
+
 export function familyPriority(p) {
   return String(p.PublicatieLabel || "").split("~").some((label) => FAMILY_PRIORITY.test(label));
 }
@@ -72,7 +80,7 @@ export function coreMatches(p) {
 }
 
 export function matches(p) {
-  return coreMatches(p) && !familyPriority(p);
+  return coreMatches(p) && !familyPriority(p) && !ageRestricted(p);
 }
 
 export function message(p) {
