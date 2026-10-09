@@ -46,23 +46,35 @@ const browser = await chromium.launch({ channel: "chrome" });
 const page = await browser.newPage({ userAgent: "Mozilla/5.0", viewport: { width: 1400, height: 1000 } });
 const items = new Map();
 let apiCalls = 0;
+let phase = "laden";
+const t0 = Date.now();
 page.on("response", async (r) => {
   if (!r.url().includes(API_MATCH)) return;
   try {
     const json = await r.json();
     apiCalls++;
-    for (const p of json?.data?.PublicatieLijst?.List || []) items.set(String(p.Id), p);
-  } catch {}
+    const list = json?.data?.PublicatieLijst?.List || [];
+    for (const p of list) items.set(String(p.Id), p);
+    console.log(`API-antwoord na ${((Date.now() - t0) / 1000).toFixed(1)}s (${phase}): status ${r.status()}, ${list.length} advertentie(s), ${JSON.stringify(r.request().postData() || "").length} bytes aanvraag`);
+  } catch (e) { console.log(`API-antwoord niet leesbaar (${phase}): ${e.message}`); }
 });
-await page.goto(PAGE_URL, { waitUntil: "networkidle", timeout: 60000 });
-await page.waitForTimeout(3000);
-try {
-  await page.getByRole("button", { name: /alles afwijzen/i }).click({ timeout: 2000 });
-  const box = page.locator("input[type=search], input[type=text]").first();
-  await box.fill("amsterdam");
-  await page.getByText("Zoek", { exact: true }).first().click();
-  await page.waitForTimeout(4000);
-} catch {}
+// De site geeft de lijst soms pas bij een tweede keer laden. Probeer daarom maximaal drie keer.
+for (let attempt = 1; attempt <= 3 && items.size === 0; attempt++) {
+  phase = `poging ${attempt}`;
+  if (attempt === 1) await page.goto(PAGE_URL, { waitUntil: "networkidle", timeout: 60000 });
+  else await page.reload({ waitUntil: "networkidle", timeout: 60000 });
+  await page.waitForTimeout(3000);
+  if (attempt === 1) {
+    try {
+      await page.getByRole("button", { name: /alles afwijzen/i }).click({ timeout: 2000 });
+      const box = page.locator("input[type=search], input[type=text]").first();
+      await box.fill("amsterdam");
+      await page.getByText("Zoek", { exact: true }).first().click();
+      await page.waitForTimeout(4000);
+    } catch {}
+  }
+  console.log(`Na ${phase}: ${items.size} advertentie(s) in totaal.`);
+}
 await browser.close();
 
 if (!apiCalls) {
