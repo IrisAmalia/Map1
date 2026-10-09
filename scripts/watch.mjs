@@ -82,6 +82,15 @@ if (!apiCalls) {
   process.exit(1);
 }
 
+// De site toont normaal ruim honderd advertenties. Blijft de lijst na drie pogingen leeg, dan is de melder blind:
+// meld dat (hooguit om de 20 minuten) in plaats van stil te blijven.
+if (items.size === 0) {
+  console.error("WAARSCHUWING: de lijst is na drie pogingen leeg. De melder kan nu geen woningen zien.");
+  if (new Date().getUTCMinutes() % 20 === 0) {
+    await notify("Waarschuwing: Dak-melder ziet geen aanbod", "De lijst op de Dak-site bleef leeg, ook na opnieuw proberen. Controleer de melder op GitHub (tabblad Actions) en kijk zelf op de Dak-site.");
+  }
+}
+
 const seen = fs.existsSync(STATE_FILE) ? JSON.parse(fs.readFileSync(STATE_FILE, "utf8")) : { ids: [] };
 const known = new Set(seen.ids);
 const all = [...items.values()];
