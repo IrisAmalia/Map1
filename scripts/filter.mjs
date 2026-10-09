@@ -5,9 +5,10 @@ export const ROOMS = [2, 5];
 export const CONTRACT = /onbepaald/i;
 // Pas vanaf deze netto (kale) huur is het middenhuur of vrije sector: alles tot en met 932,93 is sociaal.
 export const MIN_RENT_EXCLUSIVE_CENTS = 93293;
-// Woningen die voorrang geven aan gezinnen of huishoudens met kinderen (bijv. "Voorrang kleine gezinnen") slaan we over.
+// Woningen met voorrang voor gezinnen of kinderen ("Voorrang kleine gezinnen", "Voorrang grote gezinnen") of alleen voor gezinnen
+// ("Alleen voor gezinnen") slaan we over. "Voorrang 1-/2-persoonshuishoudens" blijft juist wél doorkomen.
 // De labels van een advertentie staan in PublicatieLabel, gescheiden door "~".
-export const FAMILY_PRIORITY = /voorrang.*(gezin|kind)/i;
+export const FAMILY_PRIORITY = /voorrang.*(gezin|kind)|alleen voor gezinnen/i;
 
 const eur = (n) => `€ ${Number(n).toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const num = (v) => (v === undefined || v === null || v === "" ? NaN : Number(v));

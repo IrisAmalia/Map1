@@ -69,3 +69,10 @@ test("andere labels blijven gewoon doorkomen", () => {
   assert.equal(matches(base(17, "1250.00", { PublicatieLabel: "Voorrang senioren" })), true);
   assert.equal(matches(base(18, "1250.00")), true); // geen label
 });
+
+test("echte labels uit het aanbod van 9 oktober (ook met spatie ervoor)", () => {
+  const skip = [" Voorrang kleine gezinnen", "Voorrang kleine gezinnen", "Voorrang grote gezinnen", " Alleen voor gezinnen", "Alleen voor gezinnen", "Met situatiepunten~ Voorrang kleine gezinnen"];
+  const keep = ["Met situatiepunten", "Vrije sector", "Parkeren", "Seniorenwoning", "Jongerenwoning", "Seniorenwoning met voorrang GEB-indicatie", "Rolstoelgeschikte woning", "Wibo-woning", "Voorrang 1-/2-persoonshuishoudens"];
+  skip.forEach((label, i) => assert.equal(matches(base(100 + i, "1250.00", { PublicatieLabel: label })), false, label));
+  keep.forEach((label, i) => assert.equal(matches(base(200 + i, "1250.00", { PublicatieLabel: label })), true, label));
+});
