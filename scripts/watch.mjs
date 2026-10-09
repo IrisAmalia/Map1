@@ -3,53 +3,16 @@
 import { chromium } from "playwright-core";
 import nodemailer from "nodemailer";
 import fs from "node:fs";
+import { matches, message } from "./filter.mjs";
 
 const PAGE_URL = "https://amsterdam.mijndak.nl/Woningaanbod";
 const API_MATCH = "DataActionHaalUitgelogdAanbod";
 const STATE_FILE = "state/seen.json";
 
-// Jouw filters (zie screenshot). Onbekende velden sluiten we niet uit, zodat we niets missen.
-const OWNER = /lieven de key/i;
-const ROOMS = [2, 5];
-const CONTRACT = /onbepaald/i;
-
 const MAIL_TO = process.env.MAIL_ADDRESS;
 const NTFY_TOPIC = process.env.NTFY_TOPIC;
 const GMAIL_APP_PASSWORD = (process.env.GMAIL_APP_PASSWORD || "").replace(/\s+/g, "");
 const TEST = process.env.TEST_NOTIFICATION === "true";
-
-function describe(p) {
-  const a = p.Adres || {};
-  const e = p.Eenheid || {};
-  const c = p.Cluster || {};
-  const street = [a.Straatnaam, a.Huisnummer || "", a.Huisletter, a.HuisnummerToevoeging].filter(Boolean).join(" ");
-  const place = [a.Postcode, a.Woonplaats, a.Wijk].filter(Boolean).join(", ");
-  const rooms = e.AantalKamers || (c.AantalKamersMin ? `${c.AantalKamersMin}-${c.AantalKamersMax}` : "?");
-  const rent = e.NettoHuurBekend ? `netto ${e.NettoHuur}` : e.BrutoHuurBekend ? `bruto ${e.Brutohuur}` : c.PrijsMinBekend ? `vanaf ${c.PrijsMin}` : "huur onbekend";
-  return {
-    title: street || c.Naam || `Advertentie ${p.Id}`,
-    place,
-    rooms,
-    rent,
-    model: p.PublicatieModel || p.PublicatieModule || "",
-    contract: p.ContractVorm || "",
-    owner: e.Eigenaar || c.Eigenaar || "",
-    ends: p.EinddatumTijd && !p.EinddatumTijd.startsWith("1900") ? p.EinddatumTijd : "",
-  };
-}
-
-function matches(p) {
-  const d = describe(p);
-  if (d.owner && !OWNER.test(d.owner)) return false;
-  if (!d.owner) return false; // zonder eigenaar kunnen we niet bevestigen dat het jouw corporatie is
-  const e = p.Eenheid || {};
-  const c = p.Cluster || {};
-  const min = e.AantalKamers || c.AantalKamersMin || 0;
-  const max = e.AantalKamers || c.AantalKamersMax || 0;
-  if (min && (max < ROOMS[0] || min > ROOMS[1])) return false;
-  if (d.contract && !CONTRACT.test(d.contract)) return false;
-  return true;
-}
 
 async function notify(title, body) {
   const results = [];
@@ -115,9 +78,8 @@ console.log(`Aanbod opgehaald: ${all.length} advertentie(s), ${all.filter(matche
 const fresh = all.filter((p) => matches(p) && !known.has(String(p.Id)));
 for (const p of fresh) {
   console.log("NIEUW (volledige gegevens voor controle):", JSON.stringify(p));
-  const d = describe(p);
-  const body = [`${d.title}${d.place ? ", " + d.place : ""}`, `Kamers: ${d.rooms} | ${d.rent}`, d.model && `Model: ${d.model}`, d.contract && `Contract: ${d.contract}`, d.ends && `Reageren tot: ${d.ends}`].filter(Boolean).join("\n");
-  const sent = await notify(`Nieuwe woning: ${d.title}`, body);
+  const { title, body } = message(p);
+  const sent = await notify(title, body);
   if (sent) known.add(String(p.Id)); // alleen onthouden als de melding echt is verstuurd
 }
 fs.mkdirSync("state", { recursive: true });
