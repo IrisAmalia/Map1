@@ -5,10 +5,13 @@ export const ROOMS = [2, 5];
 export const CONTRACT = /onbepaald/i;
 // Pas vanaf deze netto (kale) huur is het middenhuur of vrije sector: alles tot en met 932,93 is sociaal.
 export const MIN_RENT_EXCLUSIVE_CENTS = 93293;
-// Woningen met voorrang voor gezinnen of kinderen ("Voorrang kleine gezinnen", "Voorrang grote gezinnen") of alleen voor gezinnen
-// ("Alleen voor gezinnen") slaan we over. "Voorrang 1-/2-persoonshuishoudens" blijft juist wél doorkomen.
+// Woningen waarvoor je (minimaal) een kind moet hebben of die voorrang geven aan gezinnen/kinderen slaan we over:
+// elk label met "gezin" of "kind" ("Alleen voor gezinnen", "Voorrang kleine gezinnen", "Voorrang grote gezinnen", ...).
+// "Voorrang kleine(re) huishoudens" en "Voorrang 1-/2-persoonshuishoudens" blijven juist wél doorkomen.
 // De labels van een advertentie staan in PublicatieLabel, gescheiden door "~".
-export const FAMILY_PRIORITY = /voorrang.*(gezin|kind)|alleen voor gezinnen/i;
+export const FAMILY_PRIORITY = /gezin|kind/i;
+// Zelfde idee voor de vrije tekst van een advertentie (meestal leeg): bijvoorbeeld "minimaal 1 kind" of "gezinnen met kinderen".
+export const CHILD_REQUIRED_TEXT = /(minimaal|minstens|ten minste|tenminste)\s+(1|één|een|2|twee)\s+(thuiswonende\s+)?kind|alleen voor (huishoudens|gezinnen) met (een |1 |twee )?(thuiswonende )?kind|gezinnen met (thuiswonende )?kinderen|huishoudens met (thuiswonende )?kinderen/i;
 
 const eur = (n) => `€ ${Number(n).toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const num = (v) => (v === undefined || v === null || v === "" ? NaN : Number(v));
@@ -31,7 +34,8 @@ export function ageRestricted(p) {
 }
 
 export function familyPriority(p) {
-  return String(p.PublicatieLabel || "").split("~").some((label) => FAMILY_PRIORITY.test(label));
+  const text = String((p.PublicatieOmschrijving || {}).Tekst || "");
+  return String(p.PublicatieLabel || "").split("~").some((label) => FAMILY_PRIORITY.test(label)) || CHILD_REQUIRED_TEXT.test(text);
 }
 
 export function describe(p) {

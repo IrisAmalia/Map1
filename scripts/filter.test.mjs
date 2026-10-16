@@ -70,11 +70,30 @@ test("andere labels blijven gewoon doorkomen", () => {
   assert.equal(matches(base(18, "1250.00")), true); // geen label
 });
 
-test("echte labels uit het aanbod van 9 oktober (ook met spatie ervoor)", () => {
-  const skip = [" Voorrang kleine gezinnen", "Voorrang kleine gezinnen", "Voorrang grote gezinnen", " Alleen voor gezinnen", "Alleen voor gezinnen", "Met situatiepunten~ Voorrang kleine gezinnen"];
-  const keep = ["Met situatiepunten", "Vrije sector", "Parkeren", "Seniorenwoning", "Jongerenwoning", "Seniorenwoning met voorrang GEB-indicatie", "Rolstoelgeschikte woning", "Wibo-woning", "Voorrang 1-/2-persoonshuishoudens"];
+test("echte labels uit het aanbod (9 en 16 oktober, ook met spatie ervoor)", () => {
+  const skip = [
+    " Voorrang kleine gezinnen", "Voorrang kleine gezinnen", "Voorrang grote gezinnen", " Voorrang grote gezinnen",
+    " Alleen voor gezinnen", "Alleen voor gezinnen", "Alleen voor gezinnen voorrang GEB-indicatie",
+    "Met situatiepunten~ Voorrang kleine gezinnen",
+    "Jongerenwoning", " Jongerenwoning", "Seniorenwoning", "Seniorenwoning met voorrang GEB-indicatie",
+  ];
+  const keep = [
+    "Met situatiepunten", "Vrije sector", "Parkeren", "Rolstoelgeschikte woning", "Wibo-woning",
+    "Voorrang 1-/2-persoonshuishoudens", "Voorrang kleine(re) huishoudens", "Middenhuur Voorrang kleine(re) huishoudens",
+    "55+ Verhuisvoordeel voorrang GEB-indicatie",
+  ];
   skip.forEach((label, i) => assert.equal(matches(base(100 + i, "1250.00", { PublicatieLabel: label })), false, label));
   keep.forEach((label, i) => assert.equal(matches(base(200 + i, "1250.00", { PublicatieLabel: label })), true, label));
+});
+
+test("een kindeis staat soms alleen in de tekst of in een nieuw label", () => {
+  for (const label of ["Minimaal 1 kind", "Gezinnen met kinderen", "Woning voor huishoudens met kind"]) {
+    assert.equal(matches(base(400, "1250.00", { PublicatieLabel: label })), false, label);
+  }
+  for (const Tekst of ["Voor gezinnen met kinderen.", "Je moet minimaal 1 kind hebben.", "Alleen voor huishoudens met een kind"]) {
+    assert.equal(matches(base(401, "1250.00", { PublicatieOmschrijving: { Id: "1", Tekst } })), false, Tekst);
+  }
+  assert.equal(matches(base(402, "1250.00", { PublicatieOmschrijving: { Id: "1", Tekst: "Mooie woning bij het park." } })), true);
 });
 
 test("jongeren- en seniorenwoningen worden overgeslagen, ook zonder label via de doelgroep", () => {
