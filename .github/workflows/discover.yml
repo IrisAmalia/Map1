@@ -2,9 +2,9 @@ name: discover-detail
 on:
   workflow_dispatch:
     inputs:
-      target:
-        description: "Straatnaam van de woning om te openen"
-        default: "Andoornstraat"
+      id:
+        description: "Advertentienummer (PublicatieId) van de woning om te openen"
+        default: "383139"
 jobs:
   discover:
     runs-on: ubuntu-latest
@@ -17,4 +17,4 @@ jobs:
       - run: npm i --no-save playwright-core@1.48.0
       - run: node scripts/discover-detail.mjs
         env:
-          TARGET: ${{ inputs.target }}
+          PUBLICATIE_ID: ${{ inputs.id }}
