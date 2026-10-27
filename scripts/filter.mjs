@@ -105,11 +105,12 @@ export const detailUrl = (p) => `${DETAIL_URL}${p.Id}`;
 // "1 of 2 personen". Alleen de spelregels op de woningpagina zeggen dat zeker.
 export function parseRules(text) {
   const lines = String(text || "").split("\n").map((l) => l.trim()).filter(Boolean);
-  const start = lines.findIndex((l) => l === "Spelregels");
-  if (start < 0) return [];
-  let end = lines.findIndex((l, i) => i > start && /^Locatie op kaart/i.test(l));
-  if (end < 0) end = Math.min(lines.length, start + 12);
-  return lines.slice(start + 1, end).filter((l) => !/^Om te kunnen bepalen wie de woning krijgt/i.test(l));
+  // De echte spelregels staan direct onder een vaste inleidende zin. "Spelregels" alleen kan ook een tabblad zijn.
+  const intro = lines.findIndex((l) => /^Om te kunnen bepalen wie de woning krijgt/i.test(l));
+  if (intro < 0) return [];
+  let end = lines.findIndex((l, i) => i > intro && /^Locatie op kaart/i.test(l));
+  if (end < 0) end = Math.min(lines.length, intro + 12);
+  return lines.slice(intro + 1, end);
 }
 
 // Een spelregel over een kind, een gezin of een huishouden van minimaal 3 personen: niets voor jou, overslaan.

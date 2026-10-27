@@ -215,3 +215,11 @@ test("het bericht heeft een directe link en de spelregels", () => {
   assert.match(m.body, /Woning: https:\/\/amsterdam\.mijndak\.nl\/HuisDetails\?PublicatieId=900/);
   assert.match(message(base(901, "1250.00"), null).body, /niet gecontroleerd/);
 });
+
+test("'Spelregels' als tabblad bovenaan de pagina verstoort het lezen niet", () => {
+  const page = ["Kenmerken", "Spelregels", "Locatie", "Titel", "Etage", "3", "Prijs", "Nettohuur", "€ 1.225,00",
+    "Spelregels", "Om te kunnen bepalen wie de woning krijgt, kijken we naar spelregels.", "Gezinnen (minimaal een minderjarig kind)",
+    "Voorrang voor sociale huurders die een woning leeg achterlaten", "Locatie op kaart", "In het kort"].join("\n");
+  assert.deepEqual(parseRules(page), ["Gezinnen (minimaal een minderjarig kind)", "Voorrang voor sociale huurders die een woning leeg achterlaten"]);
+  assert.deepEqual(parseRules("Kenmerken\nSpelregels\nLocatie\nPrijs\nLocatie op kaart"), []); // alleen het tabblad, geen echte regels
+});
