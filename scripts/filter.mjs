@@ -46,9 +46,9 @@ export function excludedDistrict(p) {
 // "grote huishoudens"). "Voorrang 1-/2-persoonshuishoudens" en "Voorrang kleine(re) huishoudens" blijven wél doorkomen.
 export const LARGE_HOUSEHOLD = /(minimaal|minstens|ten minste|tenminste|vanaf)\s+(3|drie|4|vier)\s+(personen|bewoners)|\b[3-9]\s*\+\s*-?\s*(persoons|personen)|\b[3-9]\s*-?\s*(of meer\s*)?-?persoons|meerpersoons|grote(re)?\s+huishoudens/i;
 
-// Voorrang op basis van de grootte van het huishouden ("Voorrang kleine(re) huishoudens", "Voorrang 1-/2-persoonshuishoudens"):
-// ook die slaan we over, want je wilt geen woningen waar de toewijzing daarop draait.
-export const HOUSEHOLD_PRIORITY = /voorrang.*huishoud/i;
+// "Voorrang kleine(re) huishoudens" betekent: huishoudens met minimaal 1 kind onder de 18. Dat geldt niet voor jou, dus overslaan.
+// Labels over het aantal personen ("Voorrang 1-/2-persoonshuishoudens") gaan wél over een eenpersoonshuishouden en blijven doorkomen.
+export const HOUSEHOLD_PRIORITY = /voorrang.*klein(e\(re\)|ere|e)?\s+huishoud/i;
 export function householdPriority(p) {
   return String(p.PublicatieLabel || "").split("~").some((label) => HOUSEHOLD_PRIORITY.test(label));
 }

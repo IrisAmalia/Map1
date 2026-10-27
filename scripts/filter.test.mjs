@@ -76,11 +76,11 @@ test("echte labels uit het aanbod (9 en 16 oktober, ook met spatie ervoor)", () 
     " Alleen voor gezinnen", "Alleen voor gezinnen", "Alleen voor gezinnen voorrang GEB-indicatie",
     "Met situatiepunten~ Voorrang kleine gezinnen",
     "Jongerenwoning", " Jongerenwoning", "Seniorenwoning", "Seniorenwoning met voorrang GEB-indicatie",
-    "Voorrang kleine(re) huishoudens", "Middenhuur Voorrang kleine(re) huishoudens", "Voorrang 1-/2-persoonshuishoudens",
+    "Voorrang kleine(re) huishoudens", "Middenhuur Voorrang kleine(re) huishoudens",
   ];
   const keep = [
     "Met situatiepunten", "Vrije sector", "Parkeren", "Rolstoelgeschikte woning", "Wibo-woning",
-    "55+ Verhuisvoordeel voorrang GEB-indicatie", "Middenhuur", "Voorrang GEB-indicatie",
+    "55+ Verhuisvoordeel voorrang GEB-indicatie", "Middenhuur", "Voorrang GEB-indicatie", "Voorrang 1-/2-persoonshuishoudens",
   ];
   skip.forEach((label, i) => assert.equal(matches(base(100 + i, "1250.00", { PublicatieLabel: label })), false, label));
   keep.forEach((label, i) => assert.equal(matches(base(200 + i, "1250.00", { PublicatieLabel: label })), true, label));
@@ -163,11 +163,11 @@ test("voorrang of eis voor huishoudens van minimaal 3 personen wordt overgeslage
   }
 });
 
-test("voorrang op huishoudensgrootte wordt overgeslagen, andere voorrang niet", () => {
-  for (const label of ["Voorrang 1-/2-persoonshuishoudens", "Voorrang 1-persoonshuishoudens", "Voorrang 2-persoonshuishoudens", "Voorrang kleine(re) huishoudens", "Middenhuur Voorrang kleine(re) huishoudens"]) {
+test("voorrang voor kleine huishoudens (= met kind) valt af, voorrang op aantal personen en andere voorrang niet", () => {
+  for (const label of ["Voorrang kleine(re) huishoudens", "Middenhuur Voorrang kleine(re) huishoudens", "Voorrang kleine huishoudens", "Voorrang kleinere huishoudens"]) {
     assert.equal(matches(base(702, "1250.00", { PublicatieLabel: label })), false, label);
   }
-  for (const label of ["Voorrang GEB-indicatie", "55+ Verhuisvoordeel voorrang GEB-indicatie", "Met situatiepunten", "Middenhuur", "Vrije sector"]) {
+  for (const label of ["Voorrang 1-/2-persoonshuishoudens", "Voorrang 1-persoonshuishoudens", "Voorrang GEB-indicatie", "55+ Verhuisvoordeel voorrang GEB-indicatie", "Met situatiepunten", "Middenhuur", "Vrije sector"]) {
     assert.equal(matches(base(703, "1250.00", { PublicatieLabel: label })), true, label);
   }
 });
