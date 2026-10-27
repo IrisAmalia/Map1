@@ -3,7 +3,8 @@
 import { chromium } from "playwright-core";
 import nodemailer from "nodemailer";
 import fs from "node:fs";
-import { matches, skipReason, message, describe, parseRules, rulesProblem, DETAIL_URL } from "./filter.mjs";
+import { matches, skipReason, message, describe, rulesProblem } from "./filter.mjs";
+import { readRules as readRulesOf } from "./detail.mjs";
 
 const PAGE_URL = "https://amsterdam.mijndak.nl/Woningaanbod";
 const API_MATCH = "DataActionHaalUitgelogdAanbod";
@@ -96,21 +97,7 @@ const rejected = new Set(seen.rejected || []); // woningen waarvan de spelregels
 const all = [...items.values()];
 console.log(`Aanbod opgehaald: ${all.length} advertentie(s), ${all.filter(matches).length} passend. Eerder gezien: ${known.size}, afgekeurd op spelregels: ${rejected.size}.`);
 
-// Leest de spelregels op de woningpagina. null = niet gelukt.
-async function readRules(id) {
-  const detail = await browser.newPage({ userAgent: "Mozilla/5.0", viewport: { width: 1400, height: 1400 } });
-  try {
-    await detail.goto(`${DETAIL_URL}${id}`, { waitUntil: "domcontentloaded", timeout: 30000 });
-    await detail.waitForFunction(() => /Nettohuur/.test(document.body.innerText) && /In het kort/.test(document.body.innerText), null, { timeout: 25000 });
-    await detail.waitForTimeout(1000);
-    return parseRules(await detail.innerText("body"));
-  } catch (e) {
-    console.log(`Spelregels van ${id} niet te lezen: ${e.message.split("\n")[0]}`);
-    return null;
-  } finally {
-    await detail.close();
-  }
-}
+const readRules = (id) => readRulesOf(browser, id);
 
 // Hulpgegevens in het logboek: welke labels en doelgroepen komen voor, en wat slaan we wegens gezinsvoorrang over?
 const count = (xs) => xs.reduce((m, x) => ((m[x] = (m[x] || 0) + 1), m), {});

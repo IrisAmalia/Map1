@@ -1,20 +1,20 @@
-name: discover-detail
+name: check-rules
 on:
   workflow_dispatch:
     inputs:
-      id:
-        description: "Advertentienummer (PublicatieId) van de woning om te openen"
+      ids:
+        description: "Advertentienummers (PublicatieId), gescheiden door komma's"
         default: "383139"
 jobs:
-  discover:
+  check:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: npm i --no-save playwright-core@1.48.0
-      - run: node scripts/discover-detail.mjs
+      - run: node scripts/check-rules.mjs
         env:
-          PUBLICATIE_ID: ${{ inputs.id }}
+          IDS: ${{ inputs.ids }}
