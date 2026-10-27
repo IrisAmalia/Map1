@@ -12,7 +12,6 @@ export const EXCLUDED_DISTRICTS = /\(\s*(zuidoost|nieuw-west)\s*\)\s*$/i;
 export const MIN_RENT_EXCLUSIVE_CENTS = 93293;
 // Woningen waarvoor je (minimaal) een kind moet hebben of die voorrang geven aan gezinnen/kinderen slaan we over:
 // elk label met "gezin" of "kind" ("Alleen voor gezinnen", "Voorrang kleine gezinnen", "Voorrang grote gezinnen", ...).
-// "Voorrang kleine(re) huishoudens" en "Voorrang 1-/2-persoonshuishoudens" blijven juist wél doorkomen.
 // De labels van een advertentie staan in PublicatieLabel, gescheiden door "~".
 export const FAMILY_PRIORITY = /gezin|kind/i;
 // Zelfde idee voor de vrije tekst van een advertentie (meestal leeg): bijvoorbeeld "minimaal 1 kind" of "gezinnen met kinderen".
@@ -46,6 +45,13 @@ export function excludedDistrict(p) {
 // Voorrang of eis voor huishoudens van minimaal 3 personen ("3-persoonshuishoudens", "minimaal 3 personen", "3+ personen",
 // "grote huishoudens"). "Voorrang 1-/2-persoonshuishoudens" en "Voorrang kleine(re) huishoudens" blijven wél doorkomen.
 export const LARGE_HOUSEHOLD = /(minimaal|minstens|ten minste|tenminste|vanaf)\s+(3|drie|4|vier)\s+(personen|bewoners)|\b[3-9]\s*\+\s*-?\s*(persoons|personen)|\b[3-9]\s*-?\s*(of meer\s*)?-?persoons|meerpersoons|grote(re)?\s+huishoudens/i;
+
+// Voorrang op basis van de grootte van het huishouden ("Voorrang kleine(re) huishoudens", "Voorrang 1-/2-persoonshuishoudens"):
+// ook die slaan we over, want je wilt geen woningen waar de toewijzing daarop draait.
+export const HOUSEHOLD_PRIORITY = /voorrang.*huishoud/i;
+export function householdPriority(p) {
+  return String(p.PublicatieLabel || "").split("~").some((label) => HOUSEHOLD_PRIORITY.test(label));
+}
 
 export function familyPriority(p) {
   const text = String((p.PublicatieOmschrijving || {}).Tekst || "");
@@ -102,6 +108,7 @@ export function coreMatches(p) {
 export function skipReason(p) {
   if (!coreMatches(p)) return "";
   if (familyPriority(p)) return "gezinsvoorrang";
+  if (householdPriority(p)) return "voorrang huishoudensgrootte";
   if (ageRestricted(p)) return "jongeren/senioren";
   const district = excludedDistrict(p);
   if (district) return `stadsdeel ${district}`;
