@@ -112,3 +112,29 @@ test("jongeren- en seniorenwoningen worden overgeslagen, ook zonder label via de
   gezin.Eenheid.Doelgroep = "Gezin"; // alleen "Doelgroep Gezin" is geen voorrang en geen reden om over te slaan
   assert.equal(matches(gezin), true);
 });
+
+test("woningen van Rochdale, Eigen Haard en Stadgenoot komen ook door, andere corporaties niet", () => {
+  for (const eigenaar of ["Rochdale", "Rochdale Amsterdam", "Eigen Haard", "Eigen Haard Amsterdam", "Eigenhaard", "Stadgenoot", "Stadgenoot Amsterdam", "Lieven de Key Amsterdam"]) {
+    const p = base(500, "1250.00");
+    p.Eenheid.Eigenaar = eigenaar;
+    assert.equal(matches(p), true, eigenaar);
+  }
+  for (const eigenaar of ["Ymere", "De Alliantie", "Onze Woning", ""]) {
+    const p = base(501, "1250.00");
+    p.Eenheid.Eigenaar = eigenaar;
+    assert.equal(matches(p), false, eigenaar);
+  }
+  // De andere eisen gelden ook voor de nieuwe corporaties.
+  const sociaal = base(502, "800.00");
+  sociaal.Eenheid.Eigenaar = "Rochdale";
+  assert.equal(matches(sociaal), false);
+  const gezin = base(503, "1250.00", { PublicatieLabel: "Alleen voor gezinnen" });
+  gezin.Eenheid.Eigenaar = "Stadgenoot Amsterdam";
+  assert.equal(matches(gezin), false);
+});
+
+test("de naam van de corporatie staat in het bericht", () => {
+  const p = base(504, "1250.00");
+  p.Eenheid.Eigenaar = "Eigen Haard";
+  assert.match(message(p).body, /Eigen Haard \| Sociale huur/);
+});

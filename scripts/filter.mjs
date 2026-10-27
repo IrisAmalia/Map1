@@ -1,6 +1,7 @@
 // Filterregels en berichttekst voor de Dak-melder. Geen netwerk, zodat dit los te testen is.
 
-export const OWNER = /lieven de key/i;
+// Corporaties waarvan we woningen melden. Lieven de Key is jouw eigen corporatie (daar heb je voorrang), de rest is extra.
+export const OWNER = /lieven de key|rochdale|eigen\s?haard|stadgenoot/i;
 export const ROOMS = [2, 5];
 export const CONTRACT = /onbepaald/i;
 // Pas vanaf deze netto (kale) huur is het middenhuur of vrije sector: alles tot en met 932,93 is sociaal.
@@ -94,7 +95,7 @@ export function message(p) {
     body: [
       `${d.title}${d.place ? ", " + d.place : ""}`,
       `${d.rooms} kamers | ${d.rent}`,
-      [d.module, d.contract].filter(Boolean).join(" | "),
+      [d.owner, d.module, d.contract].filter(Boolean).join(" | "),
       [d.floor, d.label, d.target].filter(Boolean).join(" | "),
       d.ends && `Reageren tot: ${d.ends}`,
     ].filter(Boolean).join("\n"),
