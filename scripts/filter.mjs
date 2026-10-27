@@ -46,13 +46,6 @@ export function excludedDistrict(p) {
 // "grote huishoudens"). "Voorrang 1-/2-persoonshuishoudens" en "Voorrang kleine(re) huishoudens" blijven wél doorkomen.
 export const LARGE_HOUSEHOLD = /(minimaal|minstens|ten minste|tenminste|vanaf)\s+(3|drie|4|vier)\s+(personen|bewoners)|\b[3-9]\s*\+\s*-?\s*(persoons|personen)|\b[3-9]\s*-?\s*(of meer\s*)?-?persoons|meerpersoons|grote(re)?\s+huishoudens/i;
 
-// "Voorrang kleine(re) huishoudens" betekent: huishoudens met minimaal 1 kind onder de 18. Dat geldt niet voor jou, dus overslaan.
-// Labels over het aantal personen ("Voorrang 1-/2-persoonshuishoudens") gaan wél over een eenpersoonshuishouden en blijven doorkomen.
-export const HOUSEHOLD_PRIORITY = /voorrang.*klein(e\(re\)|ere|e)?\s+huishoud/i;
-export function householdPriority(p) {
-  return String(p.PublicatieLabel || "").split("~").some((label) => HOUSEHOLD_PRIORITY.test(label));
-}
-
 export function familyPriority(p) {
   const text = String((p.PublicatieOmschrijving || {}).Tekst || "");
   const labels = String(p.PublicatieLabel || "").split("~");
@@ -104,11 +97,34 @@ export function coreMatches(p) {
   return !/soci/i.test(d.module);
 }
 
+export const DETAIL_URL = "https://amsterdam.mijndak.nl/HuisDetails?PublicatieId=";
+export const detailUrl = (p) => `${DETAIL_URL}${p.Id}`;
+
+// Op de woningpagina staat onder "Spelregels" hoe de woning wordt toegewezen, de belangrijkste regel bovenaan.
+// "Voorrang kleine(re) huishoudens" op de lijst betekent bij de ene woning "minimaal een minderjarig kind" en bij de andere
+// "1 of 2 personen". Alleen de spelregels op de woningpagina zeggen dat zeker.
+export function parseRules(text) {
+  const lines = String(text || "").split("\n").map((l) => l.trim()).filter(Boolean);
+  const start = lines.findIndex((l) => l === "Spelregels");
+  if (start < 0) return [];
+  let end = lines.findIndex((l, i) => i > start && /^Locatie op kaart/i.test(l));
+  if (end < 0) end = Math.min(lines.length, start + 12);
+  return lines.slice(start + 1, end).filter((l) => !/^Om te kunnen bepalen wie de woning krijgt/i.test(l));
+}
+
+// Een spelregel over een kind, een gezin of een huishouden van minimaal 3 personen: niets voor jou, overslaan.
+export const RULE_CHILD_OR_FAMILY = /minderjarig|\bkind(eren)?\b|gezin/i;
+export function rulesProblem(rules) {
+  for (const r of rules || []) {
+    if (RULE_CHILD_OR_FAMILY.test(r) || LARGE_HOUSEHOLD.test(r)) return r;
+  }
+  return "";
+}
+
 // Waarom een verder passende woning toch wordt overgeslagen ("" = niet overslaan).
 export function skipReason(p) {
   if (!coreMatches(p)) return "";
   if (familyPriority(p)) return "gezinsvoorrang";
-  if (householdPriority(p)) return "voorrang huishoudensgrootte";
   if (ageRestricted(p)) return "jongeren/senioren";
   const district = excludedDistrict(p);
   if (district) return `stadsdeel ${district}`;
@@ -119,16 +135,22 @@ export function matches(p) {
   return coreMatches(p) && skipReason(p) === "";
 }
 
-export function message(p) {
+export function message(p, rules) {
   const d = describe(p);
+  const rulesLine = rules === null
+    ? "Spelregels konden niet gecontroleerd worden: kijk zelf op de woningpagina."
+    : rules && rules.length ? `Spelregels: ${rules.slice(0, 3).join(" / ")}` : "";
   return {
     title: `Nieuwe woning: ${d.title}`,
+    url: detailUrl(p),
     body: [
       `${d.title}${d.place ? ", " + d.place : ""}`,
       `${d.rooms} kamers | ${d.rent}`,
       [d.owner, d.module, d.contract].filter(Boolean).join(" | "),
       [d.floor, d.label, d.target].filter(Boolean).join(" | "),
       d.ends && `Reageren tot: ${d.ends}`,
+      rulesLine,
+      `Woning: ${detailUrl(p)}`,
     ].filter(Boolean).join("\n"),
   };
 }

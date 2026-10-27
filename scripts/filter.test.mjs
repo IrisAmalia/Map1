@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { matches, message } from "./filter.mjs";
+import { matches, message, parseRules, rulesProblem } from "./filter.mjs";
 
 // Gegevens zoals de site ze levert (vier echte advertenties van 8 oktober, ingekort), plus grensgevallen.
 const base = (id, netto, extra = {}) => ({
@@ -76,11 +76,11 @@ test("echte labels uit het aanbod (9 en 16 oktober, ook met spatie ervoor)", () 
     " Alleen voor gezinnen", "Alleen voor gezinnen", "Alleen voor gezinnen voorrang GEB-indicatie",
     "Met situatiepunten~ Voorrang kleine gezinnen",
     "Jongerenwoning", " Jongerenwoning", "Seniorenwoning", "Seniorenwoning met voorrang GEB-indicatie",
-    "Voorrang kleine(re) huishoudens", "Middenhuur Voorrang kleine(re) huishoudens",
   ];
   const keep = [
     "Met situatiepunten", "Vrije sector", "Parkeren", "Rolstoelgeschikte woning", "Wibo-woning",
     "55+ Verhuisvoordeel voorrang GEB-indicatie", "Middenhuur", "Voorrang GEB-indicatie", "Voorrang 1-/2-persoonshuishoudens",
+    "Voorrang kleine(re) huishoudens", "Middenhuur Voorrang kleine(re) huishoudens", // de woningpagina beslist (spelregels)
   ];
   skip.forEach((label, i) => assert.equal(matches(base(100 + i, "1250.00", { PublicatieLabel: label })), false, label));
   keep.forEach((label, i) => assert.equal(matches(base(200 + i, "1250.00", { PublicatieLabel: label })), true, label));
@@ -163,11 +163,55 @@ test("voorrang of eis voor huishoudens van minimaal 3 personen wordt overgeslage
   }
 });
 
-test("voorrang voor kleine huishoudens (= met kind) valt af, voorrang op aantal personen en andere voorrang niet", () => {
-  for (const label of ["Voorrang kleine(re) huishoudens", "Middenhuur Voorrang kleine(re) huishoudens", "Voorrang kleine huishoudens", "Voorrang kleinere huishoudens"]) {
-    assert.equal(matches(base(702, "1250.00", { PublicatieLabel: label })), false, label);
+// Echte tekst van de woningpagina van Andoornstraat 3 H (27 oktober), ingekort tot waar het om gaat.
+const PAGE_ANDOORN = [
+  "Prijs", "Nettohuur", "€ 1.100,00", "Brutohuur", "€1.109,67", "Je betaalt per maand €1.109,67.",
+  "Spelregels",
+  "Om te kunnen bepalen wie de woning krijgt, kijken we naar spelregels. De belangrijkste spelregel staat bovenaan, deze telt het zwaarst.",
+  "Gezinnen (minimaal een minderjarig kind)",
+  "Stadsvernieuwingsurgenten van Eigen Haard",
+  "Voorrang voor sociale huurders Eigen Haard die een woning leeg achterlaten",
+  "Voorrang voor huurders die een zelfstandige sociale huurwoning  van een corporatie met een onbepaalde tijd contract of jongerencontract in de Stadsregio Amsterdam leeg achterlaten",
+  "Voorrang voor huishoudens met een inkomen t/m € 66952",
+  "Voorrang voor woningzoekenden die geen sociale huurwoning of jongerenwoning van een corporatie binnen Stadsregio Amsterdam leeg achterlaten",
+  "Locatie op kaart", "+", "In het kort",
+].join("\n");
+
+test("de spelregels worden uit de woningpagina gelezen", () => {
+  const rules = parseRules(PAGE_ANDOORN);
+  assert.equal(rules.length, 6);
+  assert.equal(rules[0], "Gezinnen (minimaal een minderjarig kind)");
+  assert.deepEqual(parseRules("Prijs\nNettohuur\n€ 900,00\nLocatie op kaart"), []); // geen spelregels, bijvoorbeeld vrije sector
+});
+
+test("een kindeis of gezinseis in de spelregels betekent overslaan", () => {
+  assert.equal(rulesProblem(parseRules(PAGE_ANDOORN)), "Gezinnen (minimaal een minderjarig kind)");
+  assert.notEqual(rulesProblem(["Voorrang voor huishoudens met kinderen onder de 18"]), "");
+  assert.notEqual(rulesProblem(["Huishoudens van minimaal 3 personen"]), "");
+  assert.notEqual(rulesProblem(["Grote gezinnen"]), "");
+});
+
+test("spelregels zonder kind- of gezinseis blijven doorkomen, ook 1 of 2 personen", () => {
+  const ok = [
+    ["Huishoudens van 1 of 2 personen", "Voorrang voor sociale huurders Eigen Haard die een woning leeg achterlaten"],
+    ["1- of 2-persoonshuishoudens"],
+    ["Voorrang voor huishoudens met een inkomen t/m € 66952", "Voorrang voor woningzoekenden die geen sociale huurwoning leeg achterlaten"],
+    [],
+  ];
+  for (const rules of ok) assert.equal(rulesProblem(rules), "", rules.join(" / "));
+  assert.equal(rulesProblem(null), ""); // niet te lezen: niet afkeuren
+});
+
+test("labels over kleine huishoudens beslissen niet meer zelf: de woningpagina doet dat", () => {
+  for (const label of ["Voorrang kleine(re) huishoudens", "Middenhuur Voorrang kleine(re) huishoudens", "Voorrang 1-/2-persoonshuishoudens"]) {
+    assert.equal(matches(base(702, "1250.00", { PublicatieLabel: label })), true, label);
   }
-  for (const label of ["Voorrang 1-/2-persoonshuishoudens", "Voorrang 1-persoonshuishoudens", "Voorrang GEB-indicatie", "55+ Verhuisvoordeel voorrang GEB-indicatie", "Met situatiepunten", "Middenhuur", "Vrije sector"]) {
-    assert.equal(matches(base(703, "1250.00", { PublicatieLabel: label })), true, label);
-  }
+});
+
+test("het bericht heeft een directe link en de spelregels", () => {
+  const m = message(base(900, "1250.00"), ["Voorrang voor sociale huurders Eigen Haard die een woning leeg achterlaten"]);
+  assert.equal(m.url, "https://amsterdam.mijndak.nl/HuisDetails?PublicatieId=900");
+  assert.match(m.body, /Spelregels: Voorrang voor sociale huurders/);
+  assert.match(m.body, /Woning: https:\/\/amsterdam\.mijndak\.nl\/HuisDetails\?PublicatieId=900/);
+  assert.match(message(base(901, "1250.00"), null).body, /niet gecontroleerd/);
 });
