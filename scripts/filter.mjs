@@ -43,9 +43,14 @@ export function excludedDistrict(p) {
   return m ? m[1] : "";
 }
 
+// Voorrang of eis voor huishoudens van minimaal 3 personen ("3-persoonshuishoudens", "minimaal 3 personen", "3+ personen",
+// "grote huishoudens"). "Voorrang 1-/2-persoonshuishoudens" en "Voorrang kleine(re) huishoudens" blijven wél doorkomen.
+export const LARGE_HOUSEHOLD = /(minimaal|minstens|ten minste|tenminste|vanaf)\s+(3|drie|4|vier)\s+(personen|bewoners)|\b[3-9]\s*\+\s*-?\s*(persoons|personen)|\b[3-9]\s*-?\s*(of meer\s*)?-?persoons|meerpersoons|grote(re)?\s+huishoudens/i;
+
 export function familyPriority(p) {
   const text = String((p.PublicatieOmschrijving || {}).Tekst || "");
-  return String(p.PublicatieLabel || "").split("~").some((label) => FAMILY_PRIORITY.test(label)) || CHILD_REQUIRED_TEXT.test(text);
+  const labels = String(p.PublicatieLabel || "").split("~");
+  return labels.some((label) => FAMILY_PRIORITY.test(label) || LARGE_HOUSEHOLD.test(label)) || CHILD_REQUIRED_TEXT.test(text) || LARGE_HOUSEHOLD.test(text);
 }
 
 export function describe(p) {

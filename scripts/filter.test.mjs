@@ -153,3 +153,18 @@ test("niets in Zuidoost of Nieuw-West, wel in de rest van de stad", () => {
     assert.equal(matches(wijk(naam)), true, naam);
   }
 });
+
+test("voorrang of eis voor huishoudens van minimaal 3 personen wordt overgeslagen", () => {
+  for (const label of ["Voorrang 3-persoonshuishoudens", "Voorrang 3-/4-persoonshuishoudens", "Voorrang 3+ personen", "Minimaal 3 personen", "Voorrang grotere huishoudens", "Voorrang grote huishoudens", "Voorrang meerpersoonshuishoudens", "Voorrang 4-persoonshuishoudens"]) {
+    assert.equal(matches(base(700, "1250.00", { PublicatieLabel: label })), false, label);
+  }
+  for (const Tekst of ["Voor huishoudens van minimaal 3 personen.", "Alleen voor 3+ personen"]) {
+    assert.equal(matches(base(701, "1250.00", { PublicatieOmschrijving: { Id: "1", Tekst } })), false, Tekst);
+  }
+});
+
+test("labels voor kleine huishoudens blijven doorkomen", () => {
+  for (const label of ["Voorrang 1-/2-persoonshuishoudens", "Voorrang 1-persoonshuishoudens", "Voorrang 2-persoonshuishoudens", "Voorrang kleine(re) huishoudens", "Middenhuur Voorrang kleine(re) huishoudens"]) {
+    assert.equal(matches(base(702, "1250.00", { PublicatieLabel: label })), true, label);
+  }
+});
