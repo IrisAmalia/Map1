@@ -15,8 +15,14 @@ const MAIL_TO = process.env.MAIL_ADDRESS;
 const NTFY_TOPIC = process.env.NTFY_TOPIC;
 const GMAIL_APP_PASSWORD = (process.env.GMAIL_APP_PASSWORD || "").replace(/\s+/g, "");
 const TEST = process.env.TEST_NOTIFICATION === "true";
+// Proefmodus: negeer de gezien-lijst, verstuur niets en bewaar niets. Alleen om het hele proces te kunnen controleren.
+const DRY = process.env.DRY_RUN === "true";
 
 async function notify(title, body, url = PAGE_URL) {
+  if (DRY) {
+    console.log(`[PROEFMODUS, niet verstuurd] ${title}\n${body}\n${url}`);
+    return false; // niet onthouden
+  }
   const results = [];
   if (NTFY_TOPIC) {
     try {
@@ -91,7 +97,7 @@ if (items.size === 0) {
   }
 }
 
-const seen = fs.existsSync(STATE_FILE) ? JSON.parse(fs.readFileSync(STATE_FILE, "utf8")) : { ids: [] };
+const seen = !DRY && fs.existsSync(STATE_FILE) ? JSON.parse(fs.readFileSync(STATE_FILE, "utf8")) : { ids: [] };
 const known = new Set(seen.ids);
 const rejected = new Set(seen.rejected || []); // woningen waarvan de spelregels een kindeis e.d. bevatten
 const all = [...items.values()];
@@ -131,5 +137,7 @@ await browser.close();
 
 // Afgekeurde woningen die niet meer in het aanbod staan hoeven we niet te onthouden (alleen opruimen als de lijst gevuld is).
 const rejectedKeep = items.size > 0 ? [...rejected].filter((id) => items.has(id)) : [...rejected];
-fs.mkdirSync("state", { recursive: true });
-fs.writeFileSync(STATE_FILE, JSON.stringify({ ids: [...known].sort(), rejected: rejectedKeep.sort() }, null, 2) + "\n");
+if (!DRY) {
+  fs.mkdirSync("state", { recursive: true });
+  fs.writeFileSync(STATE_FILE, JSON.stringify({ ids: [...known].sort(), rejected: rejectedKeep.sort() }, null, 2) + "\n");
+}

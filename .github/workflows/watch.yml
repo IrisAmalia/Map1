@@ -8,6 +8,10 @@ on:
         description: "Stuur alleen een testmelding (ntfy + e-mail)"
         type: boolean
         default: false
+      dry:
+        description: "Proefmodus: hele controle draaien, maar niets versturen of bewaren"
+        type: boolean
+        default: false
 permissions:
   contents: write
 concurrency:
@@ -29,6 +33,7 @@ jobs:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           MAIL_ADDRESS: ${{ secrets.MAIL_ADDRESS }}
           TEST_NOTIFICATION: ${{ inputs.test }}
+          DRY_RUN: ${{ inputs.dry }}
         run: node scripts/watch.mjs
       - name: Bewaar gezien-lijst
         run: |
