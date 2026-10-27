@@ -1,0 +1,20 @@
+name: discover-detail
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Straatnaam van de woning om te openen"
+        default: "Andoornstraat"
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm i --no-save playwright-core@1.48.0
+      - run: node scripts/discover-detail.mjs
+        env:
+          TARGET: ${{ inputs.target }}
