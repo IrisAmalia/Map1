@@ -138,3 +138,18 @@ test("de naam van de corporatie staat in het bericht", () => {
   p.Eenheid.Eigenaar = "Eigen Haard";
   assert.match(message(p).body, /Eigen Haard \| Sociale huur/);
 });
+
+test("niets in Zuidoost of Nieuw-West, wel in de rest van de stad", () => {
+  const wijk = (naam) => {
+    const p = base(600, "1250.00");
+    p.Adres.Wijk = naam;
+    return p;
+  };
+  // Echte wijken uit de meldingen van 27 oktober.
+  for (const naam of ["Holendrecht (Zuidoost)", "Venserpolder (Zuidoost)", "Overtoomse Veld (Nieuw-West)", "Slotervaart-Zuid (Nieuw-West)", "Bijlmer-Centrum (zuidoost)"]) {
+    assert.equal(matches(wijk(naam)), false, naam);
+  }
+  for (const naam of ["Stadionbuurt (Zuid)", "Volewijck (Noord)", "Waterlandpleinbuurt (Noord)", "Bellamybuurt (West)", "Indische Buurt-Oost (Oost)", "Weesperbuurt/Plantage (Centrum)", "Slotervaart-Zuid", "", "Zuidoost-park"]) {
+    assert.equal(matches(wijk(naam)), true, naam);
+  }
+});

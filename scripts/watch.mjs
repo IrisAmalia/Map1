@@ -3,7 +3,7 @@
 import { chromium } from "playwright-core";
 import nodemailer from "nodemailer";
 import fs from "node:fs";
-import { matches, coreMatches, familyPriority, ageRestricted, message, describe } from "./filter.mjs";
+import { matches, skipReason, message, describe } from "./filter.mjs";
 
 const PAGE_URL = "https://amsterdam.mijndak.nl/Woningaanbod";
 const API_MATCH = "DataActionHaalUitgelogdAanbod";
@@ -101,8 +101,8 @@ const count = (xs) => xs.reduce((m, x) => ((m[x] = (m[x] || 0) + 1), m), {});
 console.log("Labels in aanbod:", JSON.stringify(count(all.flatMap((p) => String(p.PublicatieLabel || "(geen)").split("~")))));
 console.log("Aanbieders in aanbod:", JSON.stringify(count(all.map((p) => (p.Eenheid || {}).Eigenaar || (p.Cluster || {}).Eigenaar || "(geen)"))));
 console.log("Doelgroepen in aanbod:", JSON.stringify(count(all.map((p) => (p.Eenheid || {}).Doelgroep || "(geen)"))));
-for (const p of all.filter((x) => coreMatches(x) && (familyPriority(x) || ageRestricted(x)))) {
-  console.log(`Overgeslagen (${familyPriority(p) ? "gezinsvoorrang" : "jongeren/senioren"}): ${describe(p).title} (${p.PublicatieLabel || "geen label"}, doelgroep ${(p.Eenheid || {}).Doelgroep})`);
+for (const p of all.filter((x) => skipReason(x))) {
+  console.log(`Overgeslagen (${skipReason(p)}): ${describe(p).title} (${p.PublicatieLabel || "geen label"}, wijk ${(p.Adres || {}).Wijk})`);
 }
 
 const fresh = all.filter((p) => matches(p) && !known.has(String(p.Id)));

@@ -4,6 +4,10 @@
 export const OWNER = /lieven de key|rochdale|eigen\s?haard|stadgenoot/i;
 export const ROOMS = [2, 5];
 export const CONTRACT = /onbepaald/i;
+// Stadsdelen waar je niet wilt wonen. Dak zet het stadsdeel tussen haakjes achter de wijk, bijvoorbeeld
+// "Holendrecht (Zuidoost)" of "Slotervaart-Zuid (Nieuw-West)". Alleen het stadsdeel aan het einde telt,
+// dus "Stadionbuurt (Zuid)" of "Slotervaart-Zuid" op zich vallen er niet onder.
+export const EXCLUDED_DISTRICTS = /\(\s*(zuidoost|nieuw-west)\s*\)\s*$/i;
 // Pas vanaf deze netto (kale) huur is het middenhuur of vrije sector: alles tot en met 932,93 is sociaal.
 export const MIN_RENT_EXCLUSIVE_CENTS = 93293;
 // Woningen waarvoor je (minimaal) een kind moet hebben of die voorrang geven aan gezinnen/kinderen slaan we over:
@@ -32,6 +36,11 @@ export const AGE_RESTRICTED_TARGET = /^(jongeren|senioren)$/i;
 export function ageRestricted(p) {
   const labels = String(p.PublicatieLabel || "").split("~");
   return labels.some((l) => AGE_RESTRICTED_LABEL.test(l)) || AGE_RESTRICTED_TARGET.test(String((p.Eenheid || {}).Doelgroep || "").trim());
+}
+
+export function excludedDistrict(p) {
+  const m = String((p.Adres || {}).Wijk || "").match(EXCLUDED_DISTRICTS);
+  return m ? m[1] : "";
 }
 
 export function familyPriority(p) {
@@ -84,8 +93,18 @@ export function coreMatches(p) {
   return !/soci/i.test(d.module);
 }
 
+// Waarom een verder passende woning toch wordt overgeslagen ("" = niet overslaan).
+export function skipReason(p) {
+  if (!coreMatches(p)) return "";
+  if (familyPriority(p)) return "gezinsvoorrang";
+  if (ageRestricted(p)) return "jongeren/senioren";
+  const district = excludedDistrict(p);
+  if (district) return `stadsdeel ${district}`;
+  return "";
+}
+
 export function matches(p) {
-  return coreMatches(p) && !familyPriority(p) && !ageRestricted(p);
+  return coreMatches(p) && skipReason(p) === "";
 }
 
 export function message(p) {
