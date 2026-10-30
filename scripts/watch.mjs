@@ -3,7 +3,7 @@
 import { chromium } from "playwright-core";
 import nodemailer from "nodemailer";
 import fs from "node:fs";
-import { matches, skipReason, message, describe, rulesProblem } from "./filter.mjs";
+import { matches, coreMatches, skipReason, message, describe, rulesProblem, netRentCents } from "./filter.mjs";
 import { readRules as readRulesOf } from "./detail.mjs";
 
 const PAGE_URL = "https://amsterdam.mijndak.nl/Woningaanbod";
@@ -17,6 +17,8 @@ const GMAIL_APP_PASSWORD = (process.env.GMAIL_APP_PASSWORD || "").replace(/\s+/g
 const TEST = process.env.TEST_NOTIFICATION === "true";
 // Proefmodus: negeer de gezien-lijst, verstuur niets en bewaar niets. Alleen om het hele proces te kunnen controleren.
 const DRY = process.env.DRY_RUN === "true";
+// Diagnose: toon voor woningen waarvan het adres hierop lijkt precies wat elk filter zegt.
+const FOCUS = process.env.FOCUS ? new RegExp(process.env.FOCUS, "i") : null;
 
 async function notify(title, body, url = PAGE_URL) {
   if (DRY) {
@@ -102,6 +104,18 @@ const known = new Set(seen.ids);
 const rejected = new Set(seen.rejected || []); // woningen waarvan de spelregels een kindeis e.d. bevatten
 const all = [...items.values()];
 console.log(`Aanbod opgehaald: ${all.length} advertentie(s), ${all.filter(matches).length} passend. Eerder gezien: ${known.size}, afgekeurd op spelregels: ${rejected.size}.`);
+
+if (FOCUS) {
+  for (const p of all.filter((x) => FOCUS.test(describe(x).title))) {
+    const d = describe(p);
+    console.log("DIAGNOSE", JSON.stringify({
+      id: String(p.Id), adres: d.title, wijk: (p.Adres || {}).Wijk, eigenaar: d.owner, soort: d.module, label: p.PublicatieLabel,
+      kamers: d.rooms, contract: d.contract, nettoCenten: netRentCents(p), doelgroep: (p.Eenheid || {}).Doelgroep,
+      basisfilters: coreMatches(p), overslaanReden: skipReason(p), passend: matches(p),
+      alGemeld: known.has(String(p.Id)), afgekeurdOpSpelregels: rejected.has(String(p.Id)),
+    }));
+  }
+}
 
 const readRules = (id) => readRulesOf(browser, id);
 
