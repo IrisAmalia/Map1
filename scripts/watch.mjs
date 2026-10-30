@@ -3,7 +3,7 @@
 import { chromium } from "playwright-core";
 import nodemailer from "nodemailer";
 import fs from "node:fs";
-import { matches, coreMatches, skipReason, message, describe, rulesProblem, netRentCents } from "./filter.mjs";
+import { matches, coreMatches, skipReason, message, describe, rulesProblem, familyRule, netRentCents, excludedDistrict, ageRestricted } from "./filter.mjs";
 import { readRules as readRulesOf } from "./detail.mjs";
 
 const PAGE_URL = "https://amsterdam.mijndak.nl/Woningaanbod";
@@ -19,6 +19,8 @@ const TEST = process.env.TEST_NOTIFICATION === "true";
 const DRY = process.env.DRY_RUN === "true";
 // Diagnose: toon voor woningen waarvan het adres hierop lijkt precies wat elk filter zegt.
 const FOCUS = process.env.FOCUS ? new RegExp(process.env.FOCUS, "i") : null;
+// Controle: lees de woningpagina van elke woning die aan de basiseisen voldoet en toon het oordeel. Verstuurt niets.
+const AUDIT = process.env.AUDIT === "true";
 
 async function notify(title, body, url = PAGE_URL) {
   if (DRY) {
@@ -126,6 +128,22 @@ console.log("Aanbieders in aanbod:", JSON.stringify(count(all.map((p) => (p.Eenh
 console.log("Doelgroepen in aanbod:", JSON.stringify(count(all.map((p) => (p.Eenheid || {}).Doelgroep || "(geen)"))));
 for (const p of all.filter((x) => skipReason(x))) {
   console.log(`Overgeslagen (${skipReason(p)}): ${describe(p).title} (${p.PublicatieLabel || "geen label"}, wijk ${(p.Adres || {}).Wijk})`);
+}
+
+if (AUDIT) {
+  const pool = all.filter((p) => coreMatches(p) && !excludedDistrict(p) && !ageRestricted(p));
+  console.log(`CONTROLE: ${pool.length} woning(en) voldoen aan corporatie, prijs, kamers, contract en stadsdeel.`);
+  for (const p of pool) {
+    const id = String(p.Id);
+    const d = describe(p);
+    const detail = await readRules(id);
+    const label = skipReason(p);
+    const pageVerdict = detail ? rulesProblem(detail.rules, detail.minPersons) : "pagina niet te lezen";
+    const verdict = label ? `OVERGESLAGEN op label (${label})` : pageVerdict ? `OVERGESLAGEN op pagina (${pageVerdict})` : "MELDEN";
+    console.log(`CONTROLE | ${verdict} | volgens pagina: ${pageVerdict || "melden"} | ${d.title}, ${(p.Adres || {}).Wijk} | ${d.owner} | ${d.rent} | ${d.rooms} kamers | label: ${p.PublicatieLabel || "-"} | min. personen: ${detail ? detail.minPersons ?? "niet vermeld" : "?"} | gezinsregel: ${detail ? familyRule(detail.rules) || "-" : "?"} | gemeld: ${known.has(id) ? "ja" : "nee"} | ${id}`);
+  }
+  await browser.close();
+  process.exit(0);
 }
 
 const fresh = all.filter((p) => matches(p) && !known.has(String(p.Id)) && !rejected.has(String(p.Id)));
