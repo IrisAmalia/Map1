@@ -101,7 +101,7 @@ if (items.size === 0) {
 
 const seen = !DRY && fs.existsSync(STATE_FILE) ? JSON.parse(fs.readFileSync(STATE_FILE, "utf8")) : { ids: [] };
 const known = new Set(seen.ids);
-const rejected = new Set(seen.rejected || []); // woningen waarvan de spelregels een kindeis e.d. bevatten
+const rejected = new Set(seen.rejected || []); // woningen die op de woningpagina zijn afgekeurd
 const all = [...items.values()];
 console.log(`Aanbod opgehaald: ${all.length} advertentie(s), ${all.filter(matches).length} passend. Eerder gezien: ${known.size}, afgekeurd op spelregels: ${rejected.size}.`);
 
@@ -134,16 +134,18 @@ for (const p of fresh) {
   const id = String(p.Id);
   if (checks >= MAX_DETAIL_CHECKS) break; // de rest volgt de volgende minuut
   checks++;
-  const rules = await readRules(id);
-  const problem = rules ? rulesProblem(rules) : "";
+  const detail = await readRules(id);
+  const rules = detail ? detail.rules : null;
+  const minPersons = detail ? detail.minPersons : null;
+  const problem = detail ? rulesProblem(rules, minPersons) : "";
   if (problem) {
-    console.log(`Overgeslagen (spelregels: ${problem}): ${describe(p).title} [${id}] | ${rules.join(" / ")}`);
+    console.log(`Overgeslagen (spelregels: ${problem}): ${describe(p).title} [${id}] | min. personen ${minPersons} | ${rules.join(" / ")}`);
     rejected.add(id);
     continue;
   }
   console.log("NIEUW (volledige gegevens voor controle):", JSON.stringify(p));
-  console.log(`Spelregels van ${id}:`, JSON.stringify(rules));
-  const { title, body, url } = message(p, rules);
+  console.log(`Spelregels van ${id} (min. personen ${minPersons}):`, JSON.stringify(rules));
+  const { title, body, url } = message(p, rules, minPersons);
   const sent = await notify(title, body, url);
   if (sent) known.add(id); // alleen onthouden als de melding echt is verstuurd
 }

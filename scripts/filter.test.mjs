@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { matches, message, parseRules, rulesProblem } from "./filter.mjs";
+import { matches, message, parseRules, parseMinPersons, rulesProblem } from "./filter.mjs";
 
 // Gegevens zoals de site ze levert (vier echte advertenties van 8 oktober, ingekort), plus grensgevallen.
 const base = (id, netto, extra = {}) => ({
@@ -222,4 +222,31 @@ test("'Spelregels' als tabblad bovenaan de pagina verstoort het lezen niet", () 
     "Voorrang voor sociale huurders die een woning leeg achterlaten", "Locatie op kaart", "In het kort"].join("\n");
   assert.deepEqual(parseRules(page), ["Gezinnen (minimaal een minderjarig kind)", "Voorrang voor sociale huurders die een woning leeg achterlaten"]);
   assert.deepEqual(parseRules("Kenmerken\nSpelregels\nLocatie\nPrijs\nLocatie op kaart"), []); // alleen het tabblad, geen echte regels
+});
+
+// Echte "Voorwaarden" van Karimatastraat 29 (30 oktober), ingekort.
+const CONDITIONS_KARIMATA = [
+  "Voorwaarden", "Aantal personen huishouden", "is groter of gelijk aan 1", "Inkomen 1 persoon",
+  "maximaal € 70149. Uitzondering geldt voor woningzoekenden die een zelfstandige sociale huurwoning leeg achterlaten",
+  "Maximuminkomen 2 of meer personen", "Je inkomen is niet hoger dan € 93531.",
+].join("\n");
+
+test("het minimale aantal personen wordt uit de voorwaarden gelezen", () => {
+  assert.equal(parseMinPersons(CONDITIONS_KARIMATA), 1);
+  assert.equal(parseMinPersons("Aantal personen huishouden\nis groter of gelijk aan 3"), 3);
+  assert.equal(parseMinPersons("Aantal personen huishouden\nis groter dan 1"), 2);
+  assert.equal(parseMinPersons("Aantal personen huishouden\nis kleiner of gelijk aan 2"), 1);
+  assert.equal(parseMinPersons(PAGE_ANDOORN), null); // voorwaarde staat er niet
+});
+
+test("gezinnen eerst, maar een huishouden van 1 mag reageren: wel melden, met waarschuwing", () => {
+  const rules = parseRules(PAGE_ANDOORN);
+  assert.equal(rulesProblem(rules, 1), "");
+  assert.match(message(base(902, "1225.00"), rules, 1).body, /Let op: voorrang eerst voor "Gezinnen \(minimaal een minderjarig kind\)"/);
+  assert.doesNotMatch(message(base(903, "1225.00"), ["Voorrang voor huishoudens met een inkomen t/m € 66952"], 1).body, /Let op/);
+});
+
+test("minimaal 2 of meer personen als voorwaarde: overslaan, ook zonder gezinsregel", () => {
+  assert.equal(rulesProblem([], 2), "minimaal 2 personen");
+  assert.equal(rulesProblem(["Voorrang voor huishoudens met een inkomen t/m € 66952"], 3), "minimaal 3 personen");
 });

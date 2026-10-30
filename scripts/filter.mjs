@@ -113,13 +113,38 @@ export function parseRules(text) {
   return lines.slice(intro + 1, end);
 }
 
-// Een spelregel over een kind, een gezin of een huishouden van minimaal 3 personen: niets voor jou, overslaan.
+// Onder "Voorwaarden" staat wie mag reageren, bijvoorbeeld "Aantal personen huishouden / is groter of gelijk aan 1".
+// Geeft het minimale aantal personen, of null als die voorwaarde er niet staat.
+export function parseMinPersons(text) {
+  const lines = String(text || "").split("\n").map((l) => l.trim()).filter(Boolean);
+  let min = null;
+  lines.forEach((l, i) => {
+    if (!/^Aantal personen( huishouden)?$/i.test(l) || !lines[i + 1]) return;
+    const c = lines[i + 1].toLowerCase();
+    const n = Number((c.match(/\d+/) || [])[0]);
+    let m = null;
+    if (/kleiner|niet groter|maximaal|hoogstens/.test(c)) m = 1;
+    else if (/groter of gelijk|minimaal|minstens|tussen|gelijk aan|^\d/.test(c) && n) m = n;
+    else if (/groter dan/.test(c) && n >= 0) m = n + 1;
+    if (m !== null) min = Math.max(min ?? 0, m);
+  });
+  return min;
+}
+
+// Een spelregel over een kind, een gezin of een huishouden van minimaal 3 personen.
 export const RULE_CHILD_OR_FAMILY = /minderjarig|\bkind(eren)?\b|gezin/i;
-export function rulesProblem(rules) {
-  for (const r of rules || []) {
-    if (RULE_CHILD_OR_FAMILY.test(r) || LARGE_HOUSEHOLD.test(r)) return r;
-  }
-  return "";
+export function familyRule(rules) {
+  return (rules || []).find((r) => RULE_CHILD_OR_FAMILY.test(r) || LARGE_HOUSEHOLD.test(r)) || "";
+}
+
+// Waarom de woning na het lezen van de woningpagina toch wordt overgeslagen ("" = melden).
+// - Een huishouden van 1 mag niet reageren: overslaan.
+// - Een huishouden van 1 mag wel reageren: melden, ook als gezinnen voorrang hebben (dat is alleen een volgorde).
+// - Die voorwaarde staat er niet: dan bij een gezins- of kindregel overslaan, zoals eerst.
+export function rulesProblem(rules, minPersons = null) {
+  if (minPersons > 1) return `minimaal ${minPersons} personen`;
+  if (minPersons === 1) return "";
+  return familyRule(rules);
 }
 
 // Waarom een verder passende woning toch wordt overgeslagen ("" = niet overslaan).
@@ -136,8 +161,12 @@ export function matches(p) {
   return coreMatches(p) && skipReason(p) === "";
 }
 
-export function message(p, rules) {
+export function message(p, rules, minPersons = null) {
   const d = describe(p);
+  const family = familyRule(rules);
+  const warning = family && minPersons === 1
+    ? `Let op: voorrang eerst voor "${family}". Een huishouden van 1 mag wel reageren.`
+    : "";
   const rulesLine = rules === null
     ? "Spelregels konden niet gecontroleerd worden: kijk zelf op de woningpagina."
     : rules && rules.length ? `Spelregels: ${rules.slice(0, 3).join(" / ")}` : "";
@@ -151,6 +180,7 @@ export function message(p, rules) {
       [d.floor, d.label, d.target].filter(Boolean).join(" | "),
       d.ends && `Reageren tot: ${d.ends}`,
       rulesLine,
+      warning,
       `Woning: ${detailUrl(p)}`,
     ].filter(Boolean).join("\n"),
   };
