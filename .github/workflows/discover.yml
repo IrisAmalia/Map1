@@ -5,6 +5,10 @@ on:
       ids:
         description: "Advertentienummers (PublicatieId), gescheiden door komma's"
         default: "383139"
+      full:
+        description: "Ook de volledige paginatekst tonen"
+        type: boolean
+        default: false
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -18,3 +22,4 @@ jobs:
       - run: node scripts/check-rules.mjs
         env:
           IDS: ${{ inputs.ids }}
+          FULL: ${{ inputs.full }}
