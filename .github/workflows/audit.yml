@@ -1,6 +1,10 @@
 name: controle-alle-woningen
 on:
   workflow_dispatch:
+    inputs:
+      focus:
+        description: "Toon de filters voor adressen die hierop lijken (bijv. Bellamy)"
+        default: ""
 jobs:
   audit:
     runs-on: ubuntu-latest
@@ -14,3 +18,4 @@ jobs:
       - run: node scripts/watch.mjs
         env:
           AUDIT: "true"
+          FOCUS: ${{ inputs.focus }}
