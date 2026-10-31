@@ -124,6 +124,8 @@ const readRules = (id) => readRulesOf(browser, id);
 // Hulpgegevens in het logboek: welke labels en doelgroepen komen voor, en wat slaan we wegens gezinsvoorrang over?
 const count = (xs) => xs.reduce((m, x) => ((m[x] = (m[x] || 0) + 1), m), {});
 console.log("Labels in aanbod:", JSON.stringify(count(all.flatMap((p) => String(p.PublicatieLabel || "(geen)").split("~")))));
+// Het hele aanbod kort in het logboek, zodat later altijd na te gaan is of een woning er stond en waarom die niet werd gemeld.
+console.log("Alle advertenties:", all.map((p) => `${p.Id} ${describe(p).title} | ${describe(p).owner} | ${netRentCents(p) ?? "?"} | ${coreMatches(p) ? skipReason(p) || "passend" : "basis nee"}`).join(" ;; "));
 console.log("Aanbieders in aanbod:", JSON.stringify(count(all.map((p) => (p.Eenheid || {}).Eigenaar || (p.Cluster || {}).Eigenaar || "(geen)"))));
 console.log("Doelgroepen in aanbod:", JSON.stringify(count(all.map((p) => (p.Eenheid || {}).Doelgroep || "(geen)"))));
 for (const p of all.filter((x) => skipReason(x))) {
