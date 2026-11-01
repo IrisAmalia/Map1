@@ -9,11 +9,12 @@ for (const id of ids) {
   const detail = await readRules(browser, id);
   console.log(`\n=== ${id} ===`);
   if (detail === null) { console.log("NIET TE LEZEN"); continue; }
-  const { rules, minPersons } = detail;
+  const { rules, minPersons, conditions } = detail;
+  console.log(`Voorwaarden: ${conditions.join(" / ") || "niet vermeld"}`);
   console.log(`Minimaal aantal personen: ${minPersons ?? "niet vermeld"}`);
   console.log(`Spelregels (${rules.length}):`);
   rules.forEach((r, i) => console.log(`  ${i + 1}. ${r}`));
-  const problem = rulesProblem(rules, minPersons);
+  const problem = rulesProblem(rules, minPersons, conditions);
   console.log(problem ? `=> OVERSLAAN wegens: ${problem}` : "=> OK: melden");
 }
 // Met FULL=true ook de volledige tekst van de pagina tonen.

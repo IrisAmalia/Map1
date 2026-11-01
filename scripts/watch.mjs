@@ -140,7 +140,7 @@ if (AUDIT) {
     const d = describe(p);
     const detail = await readRules(id);
     const label = skipReason(p);
-    const pageVerdict = detail ? rulesProblem(detail.rules, detail.minPersons) : "pagina niet te lezen";
+    const pageVerdict = detail ? rulesProblem(detail.rules, detail.minPersons, detail.conditions) : "pagina niet te lezen";
     const verdict = label ? `OVERGESLAGEN op label (${label})` : pageVerdict ? `OVERGESLAGEN op pagina (${pageVerdict})` : "MELDEN";
     console.log(`CONTROLE | ${verdict} | volgens pagina: ${pageVerdict || "melden"} | ${d.title}, ${(p.Adres || {}).Wijk} | ${d.owner} | ${d.rent} | ${d.rooms} kamers | label: ${p.PublicatieLabel || "-"} | min. personen: ${detail ? detail.minPersons ?? "niet vermeld" : "?"} | gezinsregel: ${detail ? familyRule(detail.rules) || "-" : "?"} | gemeld: ${known.has(id) ? "ja" : "nee"} | ${id}`);
   }
@@ -157,7 +157,7 @@ for (const p of fresh) {
   const detail = await readRules(id);
   const rules = detail ? detail.rules : null;
   const minPersons = detail ? detail.minPersons : null;
-  const problem = detail ? rulesProblem(rules, minPersons) : "";
+  const problem = detail ? rulesProblem(rules, minPersons, detail.conditions) : "";
   if (problem) {
     console.log(`Overgeslagen (spelregels: ${problem}): ${describe(p).title} [${id}] | min. personen ${minPersons} | ${rules.join(" / ")}`);
     rejected.add(id);

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { matches, message, parseRules, parseMinPersons, rulesProblem } from "./filter.mjs";
+import { matches, message, parseRules, parseMinPersons, parseConditions, rulesProblem } from "./filter.mjs";
 
 // Gegevens zoals de site ze levert (vier echte advertenties van 8 oktober, ingekort), plus grensgevallen.
 const base = (id, netto, extra = {}) => ({
@@ -249,4 +249,23 @@ test("gezinnen eerst, maar een huishouden van 1 mag reageren: wel melden, met wa
 test("minimaal 2 of meer personen als voorwaarde: overslaan, ook zonder gezinsregel", () => {
   assert.equal(rulesProblem([], 2), "minimaal 2 personen");
   assert.equal(rulesProblem(["Voorrang voor huishoudens met een inkomen t/m € 66952"], 3), "minimaal 3 personen");
+});
+
+// Echte tekst van Van Noordtkade 44 E (Lieven de Key, 1 november), ingekort.
+const PAGE_NOORDTKADE = [
+  "Voorwaarden", "Let op: bij deze woning krijg je een huurcontract voor onbepaalde tijd.",
+  "Huishoudsamenstelling", "Alleen voor gezinnen met minimaal 1 kind(eren)",
+  "Maximuminkomen 1 persoons huishouden", "Je inkomen is niet hoger dan € 70149.",
+  "Kenmerken", "Advertentienummer", "388292", "Prijs", "Nettohuur", "€ 1.228,07", "Spelregels",
+  "Om te kunnen bepalen wie de woning krijgt, kijken we naar spelregels.",
+  "Voorrang voor huurders van Lieven de Key die een sociale huurwoning leeg achterlaten",
+  "Locatie op kaart", "In het kort",
+].join("\n");
+
+test("een kind- of gezinseis bij de voorwaarden betekent overslaan, ook zonder gezinsregel", () => {
+  const conditions = parseConditions(PAGE_NOORDTKADE);
+  assert.ok(conditions.includes("Alleen voor gezinnen met minimaal 1 kind(eren)"));
+  assert.equal(rulesProblem(parseRules(PAGE_NOORDTKADE), parseMinPersons(PAGE_NOORDTKADE), conditions), "voorwaarde: Alleen voor gezinnen met minimaal 1 kind(eren)");
+  // De voorwaarden van Karimatastraat (huishouden van 1 mag) blijven gewoon doorkomen.
+  assert.equal(rulesProblem(parseRules(PAGE_ANDOORN), parseMinPersons(CONDITIONS_KARIMATA), parseConditions(CONDITIONS_KARIMATA)), "");
 });

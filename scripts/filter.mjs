@@ -131,6 +131,24 @@ export function parseMinPersons(text) {
   return min;
 }
 
+// Het blok "Voorwaarden" (tot "Kenmerken"): wie mag reageren. Lieven de Key zet hier bijvoorbeeld
+// "Huishoudsamenstelling / Alleen voor gezinnen met minimaal 1 kind(eren)".
+export function parseConditions(text) {
+  const lines = String(text || "").split("\n").map((l) => l.trim()).filter(Boolean);
+  const out = [];
+  lines.forEach((l, i) => {
+    if (!/^Voorwaarden$/i.test(l)) return;
+    for (let j = i + 1; j < lines.length && !/^(Kenmerken|Spelregels|Locatie op kaart)$/i.test(lines[j]); j++) out.push(lines[j]);
+  });
+  return out;
+}
+
+// Een voorwaarde die een kind of gezin eist, of minimaal 3 personen.
+export const CONDITION_CHILD_OR_FAMILY = /alleen voor gezinnen|\bkind(eren|\(eren\))?\b|minderjarig/i;
+export function conditionProblem(conditions) {
+  return (conditions || []).find((c) => CONDITION_CHILD_OR_FAMILY.test(c) || LARGE_HOUSEHOLD.test(c)) || "";
+}
+
 // Een spelregel over een kind, een gezin of een huishouden van minimaal 3 personen.
 export const RULE_CHILD_OR_FAMILY = /minderjarig|\bkind(eren)?\b|gezin/i;
 export function familyRule(rules) {
@@ -138,10 +156,13 @@ export function familyRule(rules) {
 }
 
 // Waarom de woning na het lezen van de woningpagina toch wordt overgeslagen ("" = melden).
+// - Een voorwaarde eist een kind of gezin: overslaan.
 // - Een huishouden van 1 mag niet reageren: overslaan.
 // - Een huishouden van 1 mag wel reageren: melden, ook als gezinnen voorrang hebben (dat is alleen een volgorde).
 // - Die voorwaarde staat er niet: dan bij een gezins- of kindregel overslaan, zoals eerst.
-export function rulesProblem(rules, minPersons = null) {
+export function rulesProblem(rules, minPersons = null, conditions = []) {
+  const condition = conditionProblem(conditions);
+  if (condition) return `voorwaarde: ${condition}`;
   if (minPersons > 1) return `minimaal ${minPersons} personen`;
   if (minPersons === 1) return "";
   return familyRule(rules);
