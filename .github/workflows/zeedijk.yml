@@ -1,0 +1,50 @@
+name: NV Zeedijk woningmelder
+on:
+  schedule:
+    - cron: "3-59/10 * * * *"
+  workflow_dispatch:
+    inputs:
+      test:
+        description: "Stuur alleen een testmelding (ntfy + e-mail)"
+        type: boolean
+        default: false
+      dry:
+        description: "Proefmodus: pagina lezen, niets versturen of bewaren"
+        type: boolean
+        default: false
+      show:
+        description: "Toon de volledige paginatekst en links in het logboek"
+        type: boolean
+        default: false
+permissions:
+  contents: write
+concurrency:
+  group: zeedijk-watch
+  cancel-in-progress: false
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm i --no-save playwright-core@1.48.0 nodemailer@6.9.16
+      - name: Run melder
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          MAIL_ADDRESS: ${{ secrets.MAIL_ADDRESS }}
+          TEST_NOTIFICATION: ${{ inputs.test }}
+          DRY_RUN: ${{ inputs.dry }}
+          SHOW_PAGE: ${{ inputs.show }}
+        run: node scripts/zeedijk.mjs
+      - name: Bewaar stand
+        run: |
+          git config user.name "zeedijk-melder"
+          git config user.email "zeedijk-melder@users.noreply.github.com"
+          [ -f state/zeedijk.json ] && git add state/zeedijk.json
+          git diff --cached --quiet || (git commit -m "Update NV Zeedijk-stand" && (git push || (git pull --rebase && git push)))
