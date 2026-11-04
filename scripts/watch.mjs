@@ -3,7 +3,7 @@
 import { chromium } from "playwright-core";
 import nodemailer from "nodemailer";
 import fs from "node:fs";
-import { matches, coreMatches, skipReason, message, describe, rulesProblem, familyRule, netRentCents, excludedDistrict, ageRestricted } from "./filter.mjs";
+import { matches, coreMatches, skipReason, message, describe, rulesProblem, familyRule, netRentCents, excludedDistrict, ageRestricted, expired } from "./filter.mjs";
 import { readRules as readRulesOf } from "./detail.mjs";
 
 const PAGE_URL = "https://amsterdam.mijndak.nl/Woningaanbod";
@@ -148,7 +148,10 @@ if (AUDIT) {
   process.exit(0);
 }
 
-const fresh = all.filter((p) => matches(p) && !known.has(String(p.Id)) && !rejected.has(String(p.Id)));
+for (const p of all.filter((x) => matches(x) && expired(x) && !known.has(String(x.Id)))) {
+  console.log(`Overgeslagen (reageertermijn al voorbij, ${p.EinddatumTijd}): ${describe(p).title} [${p.Id}]`);
+}
+const fresh = all.filter((p) => matches(p) && !expired(p) && !known.has(String(p.Id)) && !rejected.has(String(p.Id)));
 let checks = 0;
 for (const p of fresh) {
   const id = String(p.Id);

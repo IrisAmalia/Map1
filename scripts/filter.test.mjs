@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { matches, message, parseRules, parseMinPersons, parseConditions, rulesProblem } from "./filter.mjs";
+import { matches, message, parseRules, parseMinPersons, parseConditions, rulesProblem, expired } from "./filter.mjs";
 
 // Gegevens zoals de site ze levert (vier echte advertenties van 8 oktober, ingekort), plus grensgevallen.
 const base = (id, netto, extra = {}) => ({
@@ -268,4 +268,12 @@ test("een kind- of gezinseis bij de voorwaarden betekent overslaan, ook zonder g
   assert.equal(rulesProblem(parseRules(PAGE_NOORDTKADE), parseMinPersons(PAGE_NOORDTKADE), conditions), "voorwaarde: Alleen voor gezinnen met minimaal 1 kind(eren)");
   // De voorwaarden van Karimatastraat (huishouden van 1 mag) blijven gewoon doorkomen.
   assert.equal(rulesProblem(parseRules(PAGE_ANDOORN), parseMinPersons(CONDITIONS_KARIMATA), parseConditions(CONDITIONS_KARIMATA)), "");
+});
+
+test("een woning waarvan de reageertermijn al voorbij is, wordt niet gemeld (Peelstraat: 2 minuten open)", () => {
+  const now = new Date("2026-11-03T14:49:54Z");
+  assert.equal(expired({ EinddatumTijd: "2026-11-03T14:48:24Z" }, now), true);
+  assert.equal(expired({ EinddatumTijd: "2026-11-06T22:59:00Z" }, now), false);
+  assert.equal(expired({ EinddatumTijd: "1900-01-01T00:00:00" }, now), false);
+  assert.equal(expired({}, now), false);
 });

@@ -83,6 +83,14 @@ export function describe(p) {
 }
 
 // Alle eisen behalve de gezinsvoorrang (apart, zodat we kunnen loggen wat we daardoor overslaan).
+// De reageertermijn is al voorbij (sommige woningen staan maar een paar minuten open). Dan heeft een melding geen zin.
+export function expired(p, now = new Date()) {
+  const end = p.EinddatumTijd;
+  if (!end || end.startsWith("1900")) return false;
+  const t = new Date(end);
+  return !Number.isNaN(t.getTime()) && t < now;
+}
+
 export function coreMatches(p) {
   const d = describe(p);
   if (!d.owner || !OWNER.test(d.owner)) return false; // zonder eigenaar kunnen we niet bevestigen dat het jouw corporatie is

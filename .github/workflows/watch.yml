@@ -26,7 +26,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      # De nieuwste stand van de branch ophalen, niet de commit van het moment van inplannen.
+      # Anders gebruikt een run die klaarstond terwijl de vorige liep een oude gezien-lijst en meldt hij dubbel.
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -45,4 +49,4 @@ jobs:
           git config user.name "dak-melder"
           git config user.email "dak-melder@users.noreply.github.com"
           git add state/seen.json
-          git diff --cached --quiet || (git commit -m "Update gezien-lijst" && git push)
+          git diff --cached --quiet || (git commit -m "Update gezien-lijst" && (git push || (git pull --rebase && git push)))
