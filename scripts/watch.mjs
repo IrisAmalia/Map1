@@ -61,8 +61,14 @@ async function notify(title, body, url = PAGE_URL, id = "") {
   return results.some((r) => r === "e-mail verstuurd" || r === "ntfy 200");
 }
 
+if (TEST && NTFY_TOPIC) {
+  try {
+    const r = await fetch(`https://ntfy.sh/${encodeURIComponent(ackTopic(NTFY_TOPIC))}/json?poll=1&since=12h`);
+    console.log(`"Gezien" ontvangen (laatste 12 uur) voor: ${[...parseAcks(await r.text())].join(", ") || "niets"}`);
+  } catch {}
+}
 if (TEST) {
-  const ok = await notify("Test: Dak-melder werkt", "Dit is een testbericht. Zie je dit in ntfy en je mail, dan staat alles goed.");
+  const ok = await notify("Test: Dak-melder werkt", "Dit is een testbericht. Zie je dit in ntfy en je mail, dan staat alles goed. Druk gerust op \"Gezien\" om de knop te proberen.", PAGE_URL, "test");
   process.exit(ok ? 0 : 1);
 }
 
@@ -196,6 +202,7 @@ if (NTFY_TOPIC && Object.keys(reminders).length) {
   try {
     const r = await fetch(`https://ntfy.sh/${encodeURIComponent(ackTopic(NTFY_TOPIC))}/json?poll=1&since=12h`);
     acks = parseAcks(await r.text());
+    console.log(`"Gezien" ontvangen voor: ${[...acks].join(", ") || "niets"}`);
   } catch (e) { console.log(`"Gezien" niet op te halen: ${e.message}`); }
 }
 const plan = planReminders(reminders, items, acks);
