@@ -42,6 +42,17 @@ async function notify(title, body, url = PAGE_URL) {
   return results.some((r) => r === "e-mail verstuurd" || r === "ntfy 200");
 }
 
+if (process.env.NTFY_CHECK === "true") {
+  // Laat zien welke berichten het kanaal de afgelopen 24 uur heeft ontvangen (van beide melders).
+  if (!NTFY_TOPIC) { console.log("NTFY_TOPIC ontbreekt."); process.exit(1); }
+  console.log(`Kanaalnaam: begint met "${NTFY_TOPIC.slice(0, 2)}", ${NTFY_TOPIC.length} tekens lang${NTFY_TOPIC !== NTFY_TOPIC.trim() ? ", LET OP: bevat spaties aan begin of eind" : ""}.`);
+  const r = await fetch(`https://ntfy.sh/${encodeURIComponent(NTFY_TOPIC)}/json?poll=1&since=24h`);
+  const msgs = (await r.text()).split("\n").filter(Boolean).map((l) => JSON.parse(l)).filter((m) => m.event === "message");
+  console.log(`ntfy status ${r.status}: ${msgs.length} bericht(en) in de afgelopen 24 uur.`);
+  for (const m of msgs) console.log(`${new Date(m.time * 1000).toLocaleString("nl-NL", { timeZone: "Europe/Amsterdam" })} | ${m.title || "(geen titel)"}`);
+  process.exit(0);
+}
+
 if (TEST) {
   const ok = await notify("Test: NV Zeedijk-melder werkt", "Dit is een testbericht van de NV Zeedijk-melder. Zie je dit in ntfy en je mail, dan staat alles goed.");
   process.exit(ok ? 0 : 1);

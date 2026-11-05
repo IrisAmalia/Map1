@@ -16,6 +16,10 @@ on:
         description: "Toon de volledige paginatekst en links in het logboek"
         type: boolean
         default: false
+      ntfycheck:
+        description: "Toon welke berichten de afgelopen 24 uur in het ntfy-kanaal zijn aangekomen"
+        type: boolean
+        default: false
 permissions:
   contents: write
 concurrency:
@@ -41,6 +45,7 @@ jobs:
           TEST_NOTIFICATION: ${{ inputs.test }}
           DRY_RUN: ${{ inputs.dry }}
           SHOW_PAGE: ${{ inputs.show }}
+          NTFY_CHECK: ${{ inputs.ntfycheck }}
         run: node scripts/zeedijk.mjs
       - name: Bewaar stand
         run: |
