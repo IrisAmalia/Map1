@@ -28,10 +28,10 @@ jobs:
     steps:
       # De nieuwste stand van de branch ophalen, niet de commit van het moment van inplannen.
       # Anders gebruikt een run die klaarstond terwijl de vorige liep een oude gezien-lijst en meldt hij dubbel.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ github.ref_name }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
       - run: npm i --no-save playwright-core@1.48.0 nodemailer@6.9.16
