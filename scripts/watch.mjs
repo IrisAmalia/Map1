@@ -1,10 +1,11 @@
 // Controleert het openbare woningaanbod van Dak (Regio Amsterdam) en meldt nieuwe
-// advertenties van Lieven de Key via ntfy (push) en e-mail.
+// advertenties van Lieven de Key, Rochdale, Eigen Haard en Stadgenoot via ntfy (push) en e-mail.
 import { chromium } from "playwright-core";
 import nodemailer from "nodemailer";
 import fs from "node:fs";
 import { matches, coreMatches, skipReason, message, describe, rulesProblem, familyRule, netRentCents, excludedDistrict, ageRestricted, expired } from "./filter.mjs";
 import { readRules as readRulesOf } from "./detail.mjs";
+import { ackTopic, ackLink, parseAcks, planReminders } from "./reminders.mjs";
 
 const PAGE_URL = "https://amsterdam.mijndak.nl/Woningaanbod";
 const API_MATCH = "DataActionHaalUitgelogdAanbod";
@@ -12,6 +13,8 @@ const STATE_FILE = "state/seen.json";
 const MAX_DETAIL_CHECKS = 12; // per run; de rest komt de volgende minuut
 
 const MAIL_TO = process.env.MAIL_ADDRESS;
+// Extra ontvangers van de e-mail (geheim MAIL_EXTRA, meerdere adressen gescheiden door komma's).
+const MAIL_RECIPIENTS = [MAIL_TO, ...String(process.env.MAIL_EXTRA || "").split(",")].map((a) => (a || "").trim()).filter(Boolean);
 const NTFY_TOPIC = process.env.NTFY_TOPIC;
 const GMAIL_APP_PASSWORD = (process.env.GMAIL_APP_PASSWORD || "").replace(/\s+/g, "");
 const TEST = process.env.TEST_NOTIFICATION === "true";
@@ -22,7 +25,7 @@ const FOCUS = process.env.FOCUS ? new RegExp(process.env.FOCUS, "i") : null;
 // Controle: lees de woningpagina van elke woning die aan de basiseisen voldoet en toon het oordeel. Verstuurt niets.
 const AUDIT = process.env.AUDIT === "true";
 
-async function notify(title, body, url = PAGE_URL) {
+async function notify(title, body, url = PAGE_URL, id = "") {
   if (DRY) {
     console.log(`[PROEFMODUS, niet verstuurd] ${title}\n${body}\n${url}`);
     return false; // niet onthouden
@@ -32,7 +35,11 @@ async function notify(title, body, url = PAGE_URL) {
     try {
       const r = await fetch(`https://ntfy.sh/${encodeURIComponent(NTFY_TOPIC)}`, {
         method: "POST",
-        headers: { Title: title, Priority: "5", Tags: "house", Click: url },
+        headers: {
+          Title: title, Priority: "5", Tags: "house", Click: url,
+          // Knop "Gezien" stopt de herinneringen voor deze woning.
+          ...(id ? { Actions: `view, Woning openen, ${url}; http, Gezien, https://ntfy.sh/${ackTopic(NTFY_TOPIC)}, body=${id}, clear=true` } : {}),
+        },
         body,
       });
       results.push(`ntfy ${r.status}`);
@@ -41,7 +48,12 @@ async function notify(title, body, url = PAGE_URL) {
   if (GMAIL_APP_PASSWORD && MAIL_TO) {
     try {
       const t = nodemailer.createTransport({ service: "gmail", auth: { user: MAIL_TO, pass: GMAIL_APP_PASSWORD } });
-      await t.sendMail({ from: MAIL_TO, to: MAIL_TO, subject: title, text: `${body}\n\n${url}` });
+      const stopLine = id && NTFY_TOPIC ? `\n\nGezien? Klik hier, dan stoppen de herinneringen voor deze woning:\n${ackLink(NTFY_TOPIC, id)}` : "";
+      await t.sendMail({ from: MAIL_TO, to: MAIL_TO, subject: title, text: `${body}\n\n${url}${stopLine}` });
+      // De extra adressen krijgen geen "Gezien"-link: een virusscanner van een werkmailbox kan links vooraf openen,
+      // en dan zouden de herinneringen stoppen zonder dat je de melding hebt gezien.
+      const extra = MAIL_RECIPIENTS.filter((a) => a !== MAIL_TO);
+      if (extra.length) await t.sendMail({ from: MAIL_TO, to: extra.join(", "), subject: title, text: `${body}\n\n${url}` });
       results.push("e-mail verstuurd");
     } catch (e) { results.push(`e-mail fout: ${e.message}`); }
   } else results.push("e-mail overgeslagen (GMAIL_APP_PASSWORD of MAIL_ADDRESS ontbreekt)");
@@ -104,6 +116,7 @@ if (items.size === 0) {
 const seen = !DRY && fs.existsSync(STATE_FILE) ? JSON.parse(fs.readFileSync(STATE_FILE, "utf8")) : { ids: [] };
 const known = new Set(seen.ids);
 const rejected = new Set(seen.rejected || []); // woningen die op de woningpagina zijn afgekeurd
+const reminders = seen.reminders || {}; // gemelde woningen waarop nog niet op "Gezien" is gedrukt
 const all = [...items.values()];
 console.log(`Aanbod opgehaald: ${all.length} advertentie(s), ${all.filter(matches).length} passend. Eerder gezien: ${known.size}, afgekeurd op spelregels: ${rejected.size}.`);
 
@@ -169,14 +182,37 @@ for (const p of fresh) {
   console.log("NIEUW (volledige gegevens voor controle):", JSON.stringify(p));
   console.log(`Spelregels van ${id} (min. personen ${minPersons}):`, JSON.stringify(rules));
   const { title, body, url } = message(p, rules, minPersons);
-  const sent = await notify(title, body, url);
-  if (sent) known.add(id); // alleen onthouden als de melding echt is verstuurd
+  const sent = await notify(title, body, url, id);
+  if (sent) {
+    known.add(id); // alleen onthouden als de melding echt is verstuurd
+    reminders[id] = { last: new Date().toISOString(), count: 0, rules, minPersons };
+  }
 }
 await browser.close();
+
+// Herinneringen: elk half uur opnieuw melden tot er op "Gezien" is gedrukt.
+let acks = new Set();
+if (NTFY_TOPIC && Object.keys(reminders).length) {
+  try {
+    const r = await fetch(`https://ntfy.sh/${encodeURIComponent(ackTopic(NTFY_TOPIC))}/json?poll=1&since=12h`);
+    acks = parseAcks(await r.text());
+  } catch (e) { console.log(`"Gezien" niet op te halen: ${e.message}`); }
+}
+const plan = planReminders(reminders, items, acks);
+for (const [id, why] of plan.stop) {
+  console.log(`Herinneringen gestopt voor ${id}: ${why}`);
+  delete reminders[id];
+}
+for (const id of plan.due) {
+  const r = reminders[id];
+  const { title, body, url } = message(items.get(id), r.rules ?? null, r.minPersons ?? null);
+  const sent = await notify(`Herinnering: ${title.replace(/^Nieuwe woning: /, "")}`, `Je hebt nog niet op "Gezien" gedrukt.\n\n${body}`, url, id);
+  if (sent) reminders[id] = { ...r, last: new Date().toISOString(), count: (r.count || 0) + 1 };
+}
 
 // Afgekeurde woningen die niet meer in het aanbod staan hoeven we niet te onthouden (alleen opruimen als de lijst gevuld is).
 const rejectedKeep = items.size > 0 ? [...rejected].filter((id) => items.has(id)) : [...rejected];
 if (!DRY) {
   fs.mkdirSync("state", { recursive: true });
-  fs.writeFileSync(STATE_FILE, JSON.stringify({ ids: [...known].sort(), rejected: rejectedKeep.sort() }, null, 2) + "\n");
+  fs.writeFileSync(STATE_FILE, JSON.stringify({ ids: [...known].sort(), rejected: rejectedKeep.sort(), reminders }, null, 2) + "\n");
 }
