@@ -72,7 +72,18 @@ if (TEST) {
   process.exit(ok ? 0 : 1);
 }
 
-const browser = await chromium.launch({ channel: "chrome" });
+// Chrome start op de GitHub-computer heel af en toe niet op (blijft hangen). Probeer het dan nog twee keer.
+async function launchBrowser() {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await chromium.launch({ channel: "chrome", timeout: 45000 });
+    } catch (e) {
+      console.log(`Chrome starten mislukt (poging ${attempt}): ${e.message.split("\n")[0]}`);
+      if (attempt >= 3) throw e;
+    }
+  }
+}
+const browser = await launchBrowser();
 const page = await browser.newPage({ userAgent: "Mozilla/5.0", viewport: { width: 1400, height: 1000 } });
 const items = new Map();
 let apiCalls = 0;
