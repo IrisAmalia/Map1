@@ -19,7 +19,8 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: dak-watch
+  # Een testmelding draait los van de gewone controles, zodat hij niet wordt geannuleerd als er een nieuwe controle klaarstaat.
+  group: dak-watch${{ inputs.test && '-test' || '' }}
   cancel-in-progress: false
 jobs:
   watch:
