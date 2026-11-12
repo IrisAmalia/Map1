@@ -88,3 +88,15 @@ for (const p of onlyPub) console.log(`ALLEEN OPENBAAR: ${p.Id} ${title(p)}`);
 const newest = [...mine.values()].sort((a, b) => String(b.PublicatieDatum).localeCompare(String(a.PublicatieDatum))).slice(0, 5);
 console.log("Nieuwste 5 (ingelogd):", newest.map((p) => `${p.Id} ${title(p)} ${p.PublicatieDatum}`).join(" ;; "));
 await browser.close();
+
+// Alle woningen als losse regels, voor een overzicht van publicatietijden.
+for (const [id, p] of new Map([...pub, ...mine])) {
+  const e = p.Eenheid || {}, c = p.Cluster || {};
+  console.log("LISTING " + JSON.stringify({
+    id, title: title(p), owner: e.Eigenaar || c.Eigenaar || "", wijk: (p.Adres || {}).Wijk || "",
+    rent: e.NettoHuur ?? c.PrijsMax ?? null, rooms: e.AantalKamers || c.AantalKamersMin || null,
+    module: p.PublicatieModule || "", label: p.PublicatieLabel || "", contract: p.ContractVorm || "",
+    published: p.PublicatieDatum || null, ends: p.EinddatumTijd || null, model: p.Model || p.ToewijzingsModel || "",
+    inPublic: pub.has(id), inLoggedIn: mine.has(id),
+  }));
+}
