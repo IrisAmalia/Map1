@@ -5,6 +5,7 @@ import nodemailer from "nodemailer";
 import fs from "node:fs";
 import { matches, coreMatches, skipReason, message, describe, rulesProblem, familyRule, netRentCents, excludedDistrict, ageRestricted, expired } from "./filter.mjs";
 import { readRules as readRulesOf } from "./detail.mjs";
+import { loggedInListings } from "./dak-login.mjs";
 import { ackTopic, ackLink, parseAcks, planReminders } from "./reminders.mjs";
 
 const PAGE_URL = "https://amsterdam.mijndak.nl/Woningaanbod";
@@ -130,6 +131,18 @@ if (items.size === 0) {
   }
 }
 
+// Ingelogd aanbod erbij: nieuwe woningen staan daar soms uren eerder dan in de openbare lijst.
+// Alleen samenvoegen als de openbare lijst geladen is: andere stappen lezen "lijst leeg" als "aanbod niet geladen".
+const loginOnly = new Set();
+let login = null;
+if (process.env.DAK_USER && process.env.DAK_PASS && items.size > 0) {
+  login = await loggedInListings(browser, process.env.DAK_USER, process.env.DAK_PASS);
+  if (login) {
+    for (const [id, p] of login.items) if (!items.has(id)) { items.set(id, p); loginOnly.add(id); }
+    console.log(`Ingelogd aanbod: ${login.items.size} advertentie(s), waarvan ${loginOnly.size} (nog) niet openbaar: ${[...loginOnly].map((id) => `${id} ${describe(items.get(id)).title}`).join(", ") || "-"}`);
+  }
+}
+
 const seen = !DRY && fs.existsSync(STATE_FILE) ? JSON.parse(fs.readFileSync(STATE_FILE, "utf8")) : { ids: [] };
 const known = new Set(seen.ids);
 const rejected = new Set(seen.rejected || []); // woningen die op de woningpagina zijn afgekeurd
@@ -149,7 +162,8 @@ if (FOCUS) {
   }
 }
 
-const readRules = (id) => readRulesOf(browser, id);
+// Een woning die nog niet openbaar is, lezen we als ingelogde gebruiker.
+const readRules = (id) => readRulesOf(login && loginOnly.has(id) ? login.context : browser, id);
 
 // Hulpgegevens in het logboek: welke labels en doelgroepen komen voor, en wat slaan we wegens gezinsvoorrang over?
 const count = (xs) => xs.reduce((m, x) => ((m[x] = (m[x] || 0) + 1), m), {});

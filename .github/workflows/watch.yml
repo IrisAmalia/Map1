@@ -42,6 +42,8 @@ jobs:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           MAIL_ADDRESS: ${{ secrets.MAIL_ADDRESS }}
           MAIL_EXTRA: ${{ secrets.MAIL_EXTRA }}
+          DAK_USER: ${{ secrets.DAK_USER }}
+          DAK_PASS: ${{ secrets.DAK_PASS }}
           TEST_NOTIFICATION: ${{ inputs.test }}
           DRY_RUN: ${{ inputs.dry }}
           FOCUS: ${{ inputs.focus }}
