@@ -23,11 +23,24 @@
     "388706",
     "389273",
     "389274",
-    "389342"
+    "389342",
+    "390495"
   ],
   "rejected": [
     "387612",
     "390256"
   ],
-  "reminders": {}
+  "reminders": {
+    "390495": {
+      "last": "2026-11-12T02:14:43.370Z",
+      "count": 0,
+      "rules": [
+        "Stadsvernieuwingsurgenten van Eigen Haard",
+        "Voorrang voor sociale huurders Eigen Haard die een woning leeg achterlaten",
+        "Voorrang voor huurders die een zelfstandige sociale huurwoning  van een corporatie met een onbepaalde tijd contract of jongerencontract in de Stadsregio Amsterdam leeg achterlaten",
+        "Voorrang voor woningzoekenden die geen sociale huurwoning of jongerenwoning van een corporatie binnen Stadsregio Amsterdam leeg achterlaten"
+      ],
+      "minPersons": 1
+    }
+  }
 }
