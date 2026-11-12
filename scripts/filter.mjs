@@ -1,7 +1,8 @@
 // Filterregels en berichttekst voor de Dak-melder. Geen netwerk, zodat dit los te testen is.
 
 // Corporaties waarvan we woningen melden. Lieven de Key is jouw eigen corporatie (daar heb je voorrang), de rest is extra.
-export const OWNER = /lieven de key|rochdale|eigen\s?haard|stadgenoot/i;
+// De Dak-naam is bijvoorbeeld "de Alliantie Amsterdam".
+export const OWNER = /lieven de key|rochdale|eigen\s?haard|stadgenoot|alliantie/i;
 export const ROOMS = [2, 5];
 export const CONTRACT = /onbepaald/i;
 // Stadsdelen waar je niet wilt wonen. Dak zet het stadsdeel tussen haakjes achter de wijk, bijvoorbeeld

@@ -113,13 +113,13 @@ test("jongeren- en seniorenwoningen worden overgeslagen, ook zonder label via de
   assert.equal(matches(gezin), true);
 });
 
-test("woningen van Rochdale, Eigen Haard en Stadgenoot komen ook door, andere corporaties niet", () => {
-  for (const eigenaar of ["Rochdale", "Rochdale Amsterdam", "Eigen Haard", "Eigen Haard Amsterdam", "Eigenhaard", "Stadgenoot", "Stadgenoot Amsterdam", "Lieven de Key Amsterdam"]) {
+test("woningen van Rochdale, Eigen Haard, Stadgenoot en de Alliantie komen ook door, andere corporaties niet", () => {
+  for (const eigenaar of ["Rochdale", "Rochdale Amsterdam", "Eigen Haard", "Eigen Haard Amsterdam", "Eigenhaard", "Stadgenoot", "Stadgenoot Amsterdam", "Lieven de Key Amsterdam", "de Alliantie Amsterdam", "De Alliantie"]) {
     const p = base(500, "1250.00");
     p.Eenheid.Eigenaar = eigenaar;
     assert.equal(matches(p), true, eigenaar);
   }
-  for (const eigenaar of ["Ymere", "De Alliantie", "Onze Woning", ""]) {
+  for (const eigenaar of ["Ymere", "Woonzorg Amsterdam", "Onze Woning", ""]) {
     const p = base(501, "1250.00");
     p.Eenheid.Eigenaar = eigenaar;
     assert.equal(matches(p), false, eigenaar);

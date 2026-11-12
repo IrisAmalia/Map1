@@ -1,5 +1,5 @@
 // Controleert het openbare woningaanbod van Dak (Regio Amsterdam) en meldt nieuwe
-// advertenties van Lieven de Key, Rochdale, Eigen Haard en Stadgenoot via ntfy (push) en e-mail.
+// advertenties van Lieven de Key, Rochdale, Eigen Haard, Stadgenoot en de Alliantie via ntfy (push) en e-mail.
 import { chromium } from "playwright-core";
 import nodemailer from "nodemailer";
 import fs from "node:fs";
