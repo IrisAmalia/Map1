@@ -7,7 +7,7 @@ const PAGE_URL = "https://amsterdam.mijndak.nl/Woningaanbod";
 const USER = process.env.DAK_USER || "";
 const PASS = process.env.DAK_PASS || "";
 if (!USER || !PASS) {
-  console.error("FOUT: zet eerst de geheimen DAK_USER en DAK_PASS in GitHub.");
+  console.error(`FOUT: DAK_USER ${USER ? "gevonden" : "ONTBREEKT"}, DAK_PASS ${PASS ? "gevonden" : "ONTBREEKT"}. Zet ze als repository secret onder Settings > Secrets and variables > Actions > tabblad Secrets.`);
   process.exit(1);
 }
 
