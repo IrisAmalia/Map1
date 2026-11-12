@@ -31,17 +31,5 @@
     "390256",
     "390394"
   ],
-  "reminders": {
-    "390495": {
-      "last": "2026-11-12T02:44:55.134Z",
-      "count": 1,
-      "rules": [
-        "Stadsvernieuwingsurgenten van Eigen Haard",
-        "Voorrang voor sociale huurders Eigen Haard die een woning leeg achterlaten",
-        "Voorrang voor huurders die een zelfstandige sociale huurwoning  van een corporatie met een onbepaalde tijd contract of jongerencontract in de Stadsregio Amsterdam leeg achterlaten",
-        "Voorrang voor woningzoekenden die geen sociale huurwoning of jongerenwoning van een corporatie binnen Stadsregio Amsterdam leeg achterlaten"
-      ],
-      "minPersons": 1
-    }
-  }
+  "reminders": {}
 }
