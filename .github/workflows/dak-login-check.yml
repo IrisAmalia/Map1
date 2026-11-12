@@ -1,0 +1,17 @@
+name: Dak inlogcontrole
+on:
+  workflow_dispatch:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm i --no-save playwright-core@1.48.0
+      - run: node scripts/dak-login-check.mjs
+        env:
+          DAK_USER: ${{ secrets.DAK_USER }}
+          DAK_PASS: ${{ secrets.DAK_PASS }}
