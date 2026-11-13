@@ -331,3 +331,15 @@ test("inkomensgrenzen: 71k past, behalve bij een maximum zonder uitzondering voo
   // Grens voor 2 of meer personen telt niet voor jou.
   assert.equal(incomeProblem(["Maximuminkomen 2 of meer personen", "Je inkomen is niet hoger dan € 60000"]), "");
 });
+
+test("Lieven de Key: ook 1-kamerwoningen en studio's; andere corporaties blijven vanaf 2 kamers", () => {
+  const studio = base(720, "1050.00", { PublicatieModule: "Middenhuur" });
+  studio.Eenheid.AantalKamers = 1;
+  assert.equal(matches(studio), false);
+  studio.Eenheid.Eigenaar = "Lieven de Key Amsterdam";
+  assert.equal(matches(studio), true);
+  const groot = base(721, "1500.00", { PublicatieModule: "Vrije sector" });
+  groot.Eenheid.Eigenaar = "Lieven de Key Amsterdam";
+  groot.Eenheid.AantalKamers = 6;
+  assert.equal(matches(groot), false);
+});
