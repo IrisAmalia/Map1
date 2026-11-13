@@ -277,3 +277,12 @@ test("een woning waarvan de reageertermijn al voorbij is, wordt niet gemeld (Pee
   assert.equal(expired({ EinddatumTijd: "1900-01-01T00:00:00" }, now), false);
   assert.equal(expired({}, now), false);
 });
+
+test("'maximaal 1 kind' als voorwaarde is een bovengrens en geen reden om over te slaan", async () => {
+  const { rulesProblem } = await import("./filter.mjs");
+  const stadgenoot = ["Huishoudsamenstelling:", "maximaal 1 kind", "Inkomen", "minimaal €51578.94"];
+  assert.equal(rulesProblem(["Voorrang voor huurders van Stadgenoot die een sociale huurwoning leeg achterlaten"], null, stadgenoot), "");
+  assert.equal(rulesProblem([], null, ["Huishoudsamenstelling:", "maximaal 2 kind"]), "");
+  // Een echte eis blijft overslaan.
+  assert.notEqual(rulesProblem([], null, ["Huishoudsamenstelling:", "Alléén voor gezinnen met minderjarige kinderen", "maximaal 2 kind"]), "");
+});

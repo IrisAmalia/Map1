@@ -154,8 +154,10 @@ export function parseConditions(text) {
 
 // Een voorwaarde die een kind of gezin eist, of minimaal 3 personen.
 export const CONDITION_CHILD_OR_FAMILY = /alleen voor gezinnen|\bkind(eren|\(eren\))?\b|minderjarig/i;
+// "maximaal 1 kind" is een bovengrens (ook zonder kinderen mag je reageren), geen eis.
+export const CHILD_LIMIT = /^(maximaal|hoogstens|niet meer dan)\s+\d+\s+kind/i;
 export function conditionProblem(conditions) {
-  return (conditions || []).find((c) => CONDITION_CHILD_OR_FAMILY.test(c) || LARGE_HOUSEHOLD.test(c)) || "";
+  return (conditions || []).find((c) => !CHILD_LIMIT.test(c.trim()) && (CONDITION_CHILD_OR_FAMILY.test(c) || LARGE_HOUSEHOLD.test(c))) || "";
 }
 
 // Een spelregel over een kind, een gezin of een huishouden van minimaal 3 personen.
