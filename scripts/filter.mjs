@@ -4,6 +4,13 @@
 // De Dak-naam is bijvoorbeeld "de Alliantie Amsterdam".
 export const OWNER = /lieven de key|rochdale|eigen\s?haard|stadgenoot|alliantie/i;
 export const ROOMS = [2, 5];
+// Je eigen corporatie: daarvan wil je alles in de gemeente Amsterdam, in elk stadsdeel en ook bij voorrang voor gezinnen
+// (zolang een huishouden van 1 mag reageren).
+export const OWN = /lieven de key/i;
+// Alleen de stad Amsterdam zelf (Dak zet de plaats in Adres.Woonplaats); Weesp, Diemen, Zaandam, Badhoevedorp enz. vallen af.
+export const HOME_CITY = /^amsterdam$/i;
+// Je bruto jaarinkomen, om inkomensgrenzen op de woningpagina te controleren.
+export const INCOME = 71000;
 export const CONTRACT = /onbepaald/i;
 // Stadsdelen waar je niet wilt wonen. Dak zet het stadsdeel tussen haakjes achter de wijk, bijvoorbeeld
 // "Holendrecht (Zuidoost)" of "Slotervaart-Zuid (Nieuw-West)". Alleen het stadsdeel aan het einde telt,
@@ -92,6 +99,12 @@ export function expired(p, now = new Date()) {
   return !Number.isNaN(t.getTime()) && t < now;
 }
 
+export const ownCorporation = (p) => OWN.test(describe(p).owner);
+export function outsideCity(p) {
+  const place = String((p.Adres || {}).Woonplaats || "").trim();
+  return place && !HOME_CITY.test(place) ? place : "";
+}
+
 export function coreMatches(p) {
   const d = describe(p);
   if (!d.owner || !OWNER.test(d.owner)) return false; // zonder eigenaar kunnen we niet bevestigen dat het jouw corporatie is
@@ -171,19 +184,58 @@ export function familyRule(rules) {
 // - Een huishouden van 1 mag niet reageren: overslaan.
 // - Een huishouden van 1 mag wel reageren: melden, ook als gezinnen voorrang hebben (dat is alleen een volgorde).
 // - Die voorwaarde staat er niet: dan bij een gezins- of kindregel overslaan, zoals eerst.
-export function rulesProblem(rules, minPersons = null, conditions = []) {
+// Bedrag uit een tekst als "€ 70149", "€ 68.483,-" of "€51578.94".
+export function parseEuro(text) {
+  const m = String(text || "").match(/€\s*([\d.,]+)/);
+  if (!m) return null;
+  let v = m[1].replace(/[.,]$/, "");
+  if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(v)) v = v.replace(/\./g, "").replace(",", ".");
+  else v = v.replace(",", ".");
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+// Inkomensgrenzen voor een huishouden van 1 onder "Voorwaarden". Een maximum geldt niet als er een uitzondering
+// voor doorstromers uit een sociale huurwoning bij staat (dat ben jij, met je jongerencontract bij Lieven de Key).
+export function incomeProblem(conditions, income = INCOME) {
+  const lines = (conditions || []).map((l) => String(l).trim());
+  for (let i = 0; i < lines.length - 1; i++) {
+    const label = lines[i], value = lines[i + 1];
+    if (/2 of meer/i.test(label)) continue;
+    const isIncome = /^(maximum|minimum)?inkomen( 1 persoon| 1 persoons huishouden)?$/i.test(label);
+    if (!isIncome) continue;
+    const amount = parseEuro(value);
+    if (amount === null) continue;
+    // Het label zegt het meestal ("Maximuminkomen"); anders de tekst ("maximaal", "niet hoger dan", "minimaal", "hoger dan").
+    const kind = /^maximum/i.test(label) ? "max" : /^minimum/i.test(label) ? "min"
+      : /niet hoger|maximaal/i.test(value) ? "max" : /hoger dan|minimaal/i.test(value) ? "min" : "";
+    if (kind === "min" && income < amount) return `inkomen onder het minimum van € ${amount}`;
+    if (kind === "max" && income > amount && !/uitzondering|geen maximum/i.test(value)) return `inkomen boven het maximum van € ${amount}`;
+  }
+  return "";
+}
+
+// own = woning van je eigen corporatie: dan alleen overslaan als een huishouden van 1 echt niet mag reageren,
+// niet bij alleen voorrang voor gezinnen.
+export function rulesProblem(rules, minPersons = null, conditions = [], own = false) {
   const condition = conditionProblem(conditions);
   if (condition) return `voorwaarde: ${condition}`;
   if (minPersons > 1) return `minimaal ${minPersons} personen`;
-  if (minPersons === 1) return "";
+  const income = incomeProblem(conditions);
+  if (income) return income;
+  if (minPersons === 1 || own) return "";
   return familyRule(rules);
 }
 
 // Waarom een verder passende woning toch wordt overgeslagen ("" = niet overslaan).
 export function skipReason(p) {
   if (!coreMatches(p)) return "";
-  if (familyPriority(p)) return "gezinsvoorrang";
+  const city = outsideCity(p);
+  if (city) return `buiten Amsterdam (${city})`;
   if (ageRestricted(p)) return "jongeren/senioren";
+  // Lieven de Key: elk stadsdeel, en of gezinsvoorrang een probleem is, beslist de woningpagina.
+  if (ownCorporation(p)) return "";
+  if (familyPriority(p)) return "gezinsvoorrang";
   const district = excludedDistrict(p);
   if (district) return `stadsdeel ${district}`;
   return "";
@@ -196,7 +248,7 @@ export function matches(p) {
 export function message(p, rules, minPersons = null) {
   const d = describe(p);
   const family = familyRule(rules);
-  const warning = family && minPersons === 1
+  const warning = family && (minPersons === 1 || ownCorporation(p))
     ? `Let op: voorrang eerst voor "${family}". Een huishouden van 1 mag wel reageren.`
     : "";
   const rulesLine = rules === null

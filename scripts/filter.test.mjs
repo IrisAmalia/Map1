@@ -12,7 +12,7 @@ const base = (id, netto, extra = {}) => ({
   HeeftLift: false,
   Adres: { Straatnaam: "Bontekoestraat", Huisnummer: 42, Wijk: "Spaarndammerbuurt/Zeeheldenbuurt (West)", Woonplaats: "Amsterdam" },
   Cluster: { PrijsMaxBekend: false, PrijsMax: "0.0", AantalKamersMin: 0, AantalKamersMax: 0, Eigenaar: "" },
-  Eenheid: { DetailSoort: "Bovenwoning", AantalKamers: 2, NettoHuurBekend: true, NettoHuur: String(netto), BrutoHuurBekend: true, Brutohuur: "939.95", EnergieLabel: "C", Eigenaar: "Lieven de Key Amsterdam" },
+  Eenheid: { DetailSoort: "Bovenwoning", AantalKamers: 2, NettoHuurBekend: true, NettoHuur: String(netto), BrutoHuurBekend: true, Brutohuur: "939.95", EnergieLabel: "C", Eigenaar: "Eigen Haard" },
   ...extra,
 });
 
@@ -285,4 +285,49 @@ test("'maximaal 1 kind' als voorwaarde is een bovengrens en geen reden om over t
   assert.equal(rulesProblem([], null, ["Huishoudsamenstelling:", "maximaal 2 kind"]), "");
   // Een echte eis blijft overslaan.
   assert.notEqual(rulesProblem([], null, ["Huishoudsamenstelling:", "Alléén voor gezinnen met minderjarige kinderen", "maximaal 2 kind"]), "");
+});
+
+test("Lieven de Key: elk stadsdeel van Amsterdam en ook bij gezinsvoorrang op de lijst; andere corporaties niet", async () => {
+  const { skipReason } = await import("./filter.mjs");
+  const ldk = (p) => ((p.Eenheid.Eigenaar = "Lieven de Key Amsterdam"), p);
+  const zuidoost = ldk(base(700, "1150.00", { PublicatieModule: "Middenhuur", Adres: { Straatnaam: "Bijlmerdreef", Huisnummer: 1, Wijk: "Holendrecht (Zuidoost)", Woonplaats: "Amsterdam" } }));
+  assert.equal(matches(zuidoost), true);
+  const gezin = ldk(base(701, "1150.00", { PublicatieModule: "Middenhuur", PublicatieLabel: "Voorrang kleine gezinnen" }));
+  assert.equal(matches(gezin), true);
+  const ander = base(702, "1150.00", { PublicatieModule: "Middenhuur", Adres: { Straatnaam: "X", Huisnummer: 1, Wijk: "Osdorp-Oost (Nieuw-West)", Woonplaats: "Amsterdam" } });
+  ander.Eenheid.Eigenaar = "Eigen Haard";
+  assert.equal(skipReason(ander), "stadsdeel Nieuw-West");
+});
+
+test("buiten de stad Amsterdam wordt overgeslagen, ook bij Lieven de Key", async () => {
+  const { skipReason } = await import("./filter.mjs");
+  for (const plaats of ["Weesp", "Diemen", "Zaandam", "Badhoevedorp", "Amstelveen"]) {
+    const p = base(710, "1150.00", { PublicatieModule: "Middenhuur", Adres: { Straatnaam: "X", Huisnummer: 1, Wijk: "Centrum", Woonplaats: plaats } });
+    p.Eenheid.Eigenaar = "Lieven de Key Amsterdam";
+    assert.equal(matches(p), false, plaats);
+    assert.match(skipReason(p), /buiten Amsterdam/);
+  }
+});
+
+test("Lieven de Key met alleen voorrang voor gezinnen wordt gemeld; een echte gezinseis niet", () => {
+  const regels = ["Voorrang voor gezinnen met minimaal 1 kind(eren)", "Voorrang voor huurders van Lieven de Key die een sociale huurwoning leeg achterlaten"];
+  assert.equal(rulesProblem(regels, null, [], true), "");
+  assert.notEqual(rulesProblem(regels, null, [], false), "");
+  assert.notEqual(rulesProblem(regels, null, ["Huishoudsamenstelling", "Alleen voor gezinnen met minimaal 1 kind(eren)"], true), "");
+  assert.notEqual(rulesProblem([], 2, [], true), "");
+});
+
+test("inkomensgrenzen: 71k past, behalve bij een maximum zonder uitzondering voor doorstromers", async () => {
+  const { incomeProblem, parseEuro } = await import("./filter.mjs");
+  assert.equal(parseEuro("€ 68.483,-"), 68483);
+  assert.equal(parseEuro("minimaal €51578.94"), 51578.94);
+  const ldk = ["Maximuminkomen 1 persoons huishouden", "Je inkomen is niet hoger dan € 70149. Uitzondering geldt voor woningzoekenden die een zelfstandige sociale huurwoning  van een corporatie in de regio Amsterdam leeg achterlaten.", "Minimuminkomen 1 persoon", "Je inkomen is hoger dan € 51537"];
+  assert.equal(incomeProblem(ldk), "");
+  const rochdale = ["Inkomen 1 persoon", "maximaal € 70149 Uitzonderingen: er geldt geen maximum voor woningzoekenden die een zelfstandige sociale huurwoning van een corporatie achterlaten."];
+  assert.equal(incomeProblem(rochdale), "");
+  assert.equal(incomeProblem(["Inkomen", "minimaal €51578.94"]), "");
+  assert.match(incomeProblem(["Maximuminkomen 1 persoon", "Je inkomen is niet hoger dan € 65000"]), /boven het maximum/);
+  assert.match(incomeProblem(["Minimuminkomen 1 persoon", "Je inkomen is hoger dan € 80000"]), /onder het minimum/);
+  // Grens voor 2 of meer personen telt niet voor jou.
+  assert.equal(incomeProblem(["Maximuminkomen 2 of meer personen", "Je inkomen is niet hoger dan € 60000"]), "");
 });
