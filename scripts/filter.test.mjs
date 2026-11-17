@@ -54,12 +54,12 @@ test("het bericht bevat adres, prijs, soort en reageren-tot in Nederlandse tijd"
   assert.match(body, /Reageren tot: .*23:59/); // 21:59 UTC = 23:59 in Amsterdam
 });
 
-test("woningen met voorrang voor gezinnen of kinderen worden overgeslagen", () => {
+test("alleen voorrang voor gezinnen is geen reden om over te slaan: de woningpagina beslist", () => {
   // Echt label uit de advertenties van 8 oktober.
-  assert.equal(matches(base(10, "1250.00", { PublicatieLabel: "Met situatiepunten~Voorrang kleine gezinnen" })), false);
-  assert.equal(matches(base(11, "1250.00", { PublicatieLabel: "Voorrang gezinnen met kinderen" })), false);
-  assert.equal(matches(base(12, "1250.00", { PublicatieLabel: "Voorrang 1 kind" })), false);
-  assert.equal(matches(base(13, "1250.00", { PublicatieLabel: "Voorrang grote gezinnen~Met situatiepunten" })), false);
+  assert.equal(matches(base(10, "1250.00", { PublicatieLabel: "Met situatiepunten~Voorrang kleine gezinnen" })), true);
+  assert.equal(matches(base(11, "1250.00", { PublicatieLabel: "Voorrang gezinnen met kinderen" })), true);
+  assert.equal(matches(base(12, "1250.00", { PublicatieLabel: "Voorrang 1 kind" })), true);
+  assert.equal(matches(base(13, "1250.00", { PublicatieLabel: "Voorrang grote gezinnen~Met situatiepunten" })), true);
 });
 
 test("andere labels blijven gewoon doorkomen", () => {
@@ -72,15 +72,14 @@ test("andere labels blijven gewoon doorkomen", () => {
 
 test("echte labels uit het aanbod (9 en 16 oktober, ook met spatie ervoor)", () => {
   const skip = [
-    " Voorrang kleine gezinnen", "Voorrang kleine gezinnen", "Voorrang grote gezinnen", " Voorrang grote gezinnen",
     " Alleen voor gezinnen", "Alleen voor gezinnen", "Alleen voor gezinnen voorrang GEB-indicatie",
-    "Met situatiepunten~ Voorrang kleine gezinnen",
     "Jongerenwoning", " Jongerenwoning", "Seniorenwoning", "Seniorenwoning met voorrang GEB-indicatie",
   ];
   const keep = [
     "Met situatiepunten", "Vrije sector", "Parkeren", "Rolstoelgeschikte woning", "Wibo-woning",
     "55+ Verhuisvoordeel voorrang GEB-indicatie", "Middenhuur", "Voorrang GEB-indicatie", "Voorrang 1-/2-persoonshuishoudens",
-    "Voorrang kleine(re) huishoudens", "Middenhuur Voorrang kleine(re) huishoudens", // de woningpagina beslist (spelregels)
+    "Voorrang kleine(re) huishoudens", "Middenhuur Voorrang kleine(re) huishoudens", // de woningpagina beslist (voorwaarden)
+    " Voorrang kleine gezinnen", "Voorrang kleine gezinnen", "Voorrang grote gezinnen", " Voorrang grote gezinnen", "Met situatiepunten~ Voorrang kleine gezinnen",
   ];
   skip.forEach((label, i) => assert.equal(matches(base(100 + i, "1250.00", { PublicatieLabel: label })), false, label));
   keep.forEach((label, i) => assert.equal(matches(base(200 + i, "1250.00", { PublicatieLabel: label })), true, label));
@@ -155,9 +154,12 @@ test("Rochdale: niets in Zuidoost of Nieuw-West, wel in de rest van de stad", ()
   }
 });
 
-test("voorrang of eis voor huishoudens van minimaal 3 personen wordt overgeslagen", () => {
-  for (const label of ["Voorrang 3-persoonshuishoudens", "Voorrang 3-/4-persoonshuishoudens", "Voorrang 3+ personen", "Minimaal 3 personen", "Voorrang grotere huishoudens", "Voorrang grote huishoudens", "Voorrang meerpersoonshuishoudens", "Voorrang 4-persoonshuishoudens"]) {
+test("een eis van minimaal 3 personen wordt overgeslagen, alleen voorrang voor grotere huishoudens niet", () => {
+  for (const label of ["Minimaal 3 personen", "Minimaal 2 personen", "Alleen voor 3+ personen"]) {
     assert.equal(matches(base(700, "1250.00", { PublicatieLabel: label })), false, label);
+  }
+  for (const label of ["Voorrang 3-persoonshuishoudens", "Voorrang 3-/4-persoonshuishoudens", "Voorrang 3+ personen", "Voorrang grotere huishoudens", "Voorrang grote huishoudens", "Voorrang meerpersoonshuishoudens", "Voorrang 4-persoonshuishoudens"]) {
+    assert.equal(matches(base(703, "1250.00", { PublicatieLabel: label })), true, label);
   }
   for (const Tekst of ["Voor huishoudens van minimaal 3 personen.", "Alleen voor 3+ personen"]) {
     assert.equal(matches(base(701, "1250.00", { PublicatieOmschrijving: { Id: "1", Tekst } })), false, Tekst);
@@ -185,11 +187,11 @@ test("de spelregels worden uit de woningpagina gelezen", () => {
   assert.deepEqual(parseRules("Prijs\nNettohuur\n€ 900,00\nLocatie op kaart"), []); // geen spelregels, bijvoorbeeld vrije sector
 });
 
-test("een kindeis of gezinseis in de spelregels betekent overslaan", () => {
-  assert.equal(rulesProblem(parseRules(PAGE_ANDOORN)), "Gezinnen (minimaal een minderjarig kind)");
-  assert.notEqual(rulesProblem(["Voorrang voor huishoudens met kinderen onder de 18"]), "");
-  assert.notEqual(rulesProblem(["Huishoudens van minimaal 3 personen"]), "");
-  assert.notEqual(rulesProblem(["Grote gezinnen"]), "");
+test("voorrang voor gezinnen in de spelregels is alleen een volgorde: wel melden, met waarschuwing", () => {
+  assert.equal(rulesProblem(parseRules(PAGE_ANDOORN)), "");
+  assert.equal(rulesProblem(["Voorrang voor huishoudens met kinderen onder de 18"]), "");
+  assert.equal(rulesProblem(["Grote gezinnen"]), "");
+  assert.match(message(base(904, "1225.00"), parseRules(PAGE_ANDOORN), null).body, /Let op: voorrang eerst voor "Gezinnen/);
 });
 
 test("spelregels zonder kind- of gezinseis blijven doorkomen, ook 1 of 2 personen", () => {
@@ -310,12 +312,11 @@ test("buiten de stad Amsterdam wordt overgeslagen, ook bij Lieven de Key", async
   }
 });
 
-test("Lieven de Key met alleen voorrang voor gezinnen wordt gemeld; een echte gezinseis niet", () => {
+test("alleen voorrang voor gezinnen wordt gemeld; een echte gezinseis niet", () => {
   const regels = ["Voorrang voor gezinnen met minimaal 1 kind(eren)", "Voorrang voor huurders van Lieven de Key die een sociale huurwoning leeg achterlaten"];
-  assert.equal(rulesProblem(regels, null, [], true), "");
-  assert.notEqual(rulesProblem(regels, null, [], false), "");
-  assert.notEqual(rulesProblem(regels, null, ["Huishoudsamenstelling", "Alleen voor gezinnen met minimaal 1 kind(eren)"], true), "");
-  assert.notEqual(rulesProblem([], 2, [], true), "");
+  assert.equal(rulesProblem(regels, null, []), "");
+  assert.notEqual(rulesProblem(regels, null, ["Huishoudsamenstelling", "Alleen voor gezinnen met minimaal 1 kind(eren)"]), "");
+  assert.notEqual(rulesProblem([], 2, []), "");
 });
 
 test("inkomensgrenzen: 71k past, behalve bij een maximum zonder uitzondering voor doorstromers", async () => {

@@ -58,10 +58,14 @@ export function excludedDistrict(p) {
 // "grote huishoudens"). "Voorrang 1-/2-persoonshuishoudens" en "Voorrang kleine(re) huishoudens" blijven wél doorkomen.
 export const LARGE_HOUSEHOLD = /(minimaal|minstens|ten minste|tenminste|vanaf)\s+(3|drie|4|vier)\s+(personen|bewoners)|\b[3-9]\s*\+\s*-?\s*(persoons|personen)|\b[3-9]\s*-?\s*(of meer\s*)?-?persoons|meerpersoons|grote(re)?\s+huishoudens/i;
 
-export function familyPriority(p) {
+// Een harde eis al op de lijst: "Alleen voor gezinnen", een kindeis, of minimaal 3 personen.
+// Alleen voorrang ("Voorrang kleine gezinnen") is geen eis: dan beslist de woningpagina of een huishouden van 1 mag reageren.
+export const FAMILY_ONLY = /alleen voor (gezinnen|huishoudens met)|minimaal\s+(1|één|een|2|twee)\s+kind|^\s*gezinnen met kinderen|huishoudens met (een )?kind/i;
+export const MIN_PERSONS_TEXT = /(minimaal|minstens|ten minste|tenminste|vanaf)\s+(2|twee|3|drie|4|vier)\s+(personen|bewoners)|alleen voor\s+[2-9]\s*\+?\s*personen/i;
+export function familyRequirement(p) {
   const text = String((p.PublicatieOmschrijving || {}).Tekst || "");
   const labels = String(p.PublicatieLabel || "").split("~");
-  return labels.some((label) => FAMILY_PRIORITY.test(label) || LARGE_HOUSEHOLD.test(label)) || CHILD_REQUIRED_TEXT.test(text) || LARGE_HOUSEHOLD.test(text);
+  return labels.some((l) => FAMILY_ONLY.test(l) || MIN_PERSONS_TEXT.test(l)) || CHILD_REQUIRED_TEXT.test(text) || MIN_PERSONS_TEXT.test(text);
 }
 
 export function describe(p) {
@@ -221,16 +225,15 @@ export function incomeProblem(conditions, income = INCOME) {
   return "";
 }
 
-// own = woning van je eigen corporatie: dan alleen overslaan als een huishouden van 1 echt niet mag reageren,
-// niet bij alleen voorrang voor gezinnen.
-export function rulesProblem(rules, minPersons = null, conditions = [], own = false) {
+// Alleen overslaan als een huishouden van 1 echt niet mag reageren (voorwaarden, aantal personen, inkomen).
+// Voorrang voor gezinnen in de spelregels is alleen een volgorde: dan wel melden, met een waarschuwing.
+export function rulesProblem(rules, minPersons = null, conditions = []) {
   const condition = conditionProblem(conditions);
   if (condition) return `voorwaarde: ${condition}`;
   if (minPersons > 1) return `minimaal ${minPersons} personen`;
   const income = incomeProblem(conditions);
   if (income) return income;
-  if (minPersons === 1 || own) return "";
-  return familyRule(rules);
+  return "";
 }
 
 // Waarom een verder passende woning toch wordt overgeslagen ("" = niet overslaan).
@@ -239,9 +242,9 @@ export function skipReason(p) {
   const city = outsideCity(p);
   if (city) return `buiten Amsterdam (${city})`;
   if (ageRestricted(p)) return "jongeren/senioren";
-  // Lieven de Key: elk stadsdeel, en of gezinsvoorrang een probleem is, beslist de woningpagina.
+  if (familyRequirement(p)) return "alleen voor gezinnen of grotere huishoudens";
+  // Lieven de Key: elk stadsdeel.
   if (ownCorporation(p)) return "";
-  if (familyPriority(p)) return "gezinsvoorrang";
   const district = excludedDistrict(p);
   if (district) return `stadsdeel ${district}`;
   return "";
@@ -254,8 +257,8 @@ export function matches(p) {
 export function message(p, rules, minPersons = null) {
   const d = describe(p);
   const family = familyRule(rules);
-  const warning = family && (minPersons === 1 || ownCorporation(p))
-    ? `Let op: voorrang eerst voor "${family}". Een huishouden van 1 mag wel reageren.`
+  const warning = family
+    ? `Let op: voorrang eerst voor "${family}". ${minPersons === 1 ? "Een huishouden van 1 mag wel reageren." : "Er staat geen eis voor gezinnen bij de voorwaarden, dus je mag waarschijnlijk reageren."}`
     : "";
   const rulesLine = rules === null
     ? "Spelregels konden niet gecontroleerd worden: kijk zelf op de woningpagina."
