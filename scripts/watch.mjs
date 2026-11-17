@@ -3,7 +3,7 @@
 import { chromium } from "playwright-core";
 import nodemailer from "nodemailer";
 import fs from "node:fs";
-import { matches, coreMatches, skipReason, message, describe, rulesProblem, familyRule, netRentCents, excludedDistrict, ageRestricted, expired } from "./filter.mjs";
+import { WATCHLIST, watchHit, matches, coreMatches, skipReason, message, describe, rulesProblem, familyRule, netRentCents, excludedDistrict, ageRestricted, expired } from "./filter.mjs";
 import { readRules as readRulesOf } from "./detail.mjs";
 import { loggedInListings } from "./dak-login.mjs";
 import { ackTopic, ackLink, parseAcks, planReminders } from "./reminders.mjs";
@@ -219,6 +219,25 @@ for (const p of fresh) {
     reminders[id] = { last: new Date().toISOString(), count: 0, rules, minPersons };
   }
 }
+
+// Volglijst: melden zodra een gevolgd adres (weer) op Dak verschijnt, ongeacht de filters.
+// Per adres onthouden we welk advertentienummer nu online staat; verdwijnt het, dan wordt dat weer leeg.
+const watch = seen.watch || {};
+if (items.size > 0) {
+  for (const w of WATCHLIST) {
+    const hit = all.find((p) => watchHit(w, p));
+    const id = hit ? String(hit.Id) : null;
+    if (id && watch[w.name] !== id) {
+      const { body, url } = message(hit, []);
+      const sent = await notify(`Weer online op Dak: ${describe(hit).title}`, `Dit adres staat op je volglijst.\n\n${body}`, url);
+      if (sent) watch[w.name] = id;
+      console.log(`VOLGLIJST: ${w.name} staat online [${id}]${sent ? ", gemeld" : ", melding mislukt"}`);
+    } else if (!id && watch[w.name]) {
+      console.log(`VOLGLIJST: ${w.name} staat niet meer online.`);
+      watch[w.name] = null;
+    }
+  }
+}
 await browser.close();
 
 // Herinneringen: elk half uur opnieuw melden tot er op "Gezien" is gedrukt.
@@ -246,5 +265,5 @@ for (const id of plan.due) {
 const rejectedKeep = items.size > 0 ? [...rejected].filter((id) => items.has(id)) : [...rejected];
 if (!DRY) {
   fs.mkdirSync("state", { recursive: true });
-  fs.writeFileSync(STATE_FILE, JSON.stringify({ ids: [...known].sort(), rejected: rejectedKeep.sort(), reminders }, null, 2) + "\n");
+  fs.writeFileSync(STATE_FILE, JSON.stringify({ ids: [...known].sort(), rejected: rejectedKeep.sort(), reminders, watch }, null, 2) + "\n");
 }

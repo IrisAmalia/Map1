@@ -360,3 +360,12 @@ test("Nieuw-West mag bij Eigen Haard, Stadgenoot en de Alliantie, niet bij Rochd
   }
   assert.equal(skipReason(woning("Rochdale Amsterdam", "Slotervaart-Zuid (Nieuw-West)")), "stadsdeel Nieuw-West");
 });
+
+test("volglijst: Jollemanhof 216 wordt herkend, andere nummers niet", async () => {
+  const { WATCHLIST, watchHit } = await import("./filter.mjs");
+  const w = WATCHLIST.find((x) => x.name === "Jollemanhof 216");
+  const adres = (nr) => base(740, "1200.61", { Adres: { Straatnaam: "Jollemanhof", Huisnummer: nr, Wijk: "Oostelijk Havengebied (Oost)", Woonplaats: "Amsterdam" } });
+  assert.equal(watchHit(w, adres(216)), true);
+  assert.equal(watchHit(w, adres(2160)), false);
+  assert.equal(watchHit(w, adres(21)), false);
+});

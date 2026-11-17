@@ -9,6 +9,12 @@ export const ROOMS = [2, 5];
 export const OWN = /lieven de key/i;
 // Alleen de stad Amsterdam zelf (Dak zet de plaats in Adres.Woonplaats); Weesp, Diemen, Zaandam, Badhoevedorp enz. vallen af.
 export const HOME_CITY = /^amsterdam$/i;
+// Volglijst: adressen waarvan je altijd een melding wilt zodra ze (weer) op Dak staan, los van alle filters.
+export const WATCHLIST = [
+  { name: "Jollemanhof 216", re: /^jollemanhof\s+216\b/i }, // Ymere, gevraagd op 17 november
+];
+export const watchHit = (w, p) => w.re.test(describe(p).title);
+
 // Je bruto jaarinkomen, om inkomensgrenzen op de woningpagina te controleren.
 export const INCOME = 71000;
 export const CONTRACT = /onbepaald/i;
