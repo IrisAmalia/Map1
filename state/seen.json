@@ -27,9 +27,15 @@
     "389342",
     "390495",
     "390683",
+    "390843",
     "390879"
   ],
-  "rejected": [],
+  "rejected": [
+    "386131",
+    "390256",
+    "390345",
+    "390716"
+  ],
   "reminders": {
     "388596": {
       "last": "2026-11-17T00:21:04.835Z",
@@ -54,6 +60,19 @@
         "Voorrang voor woningzoekenden die geen sociale huurwoning of jongerenwoning van een corporatie binnen Stadsregio Amsterdam leeg achterlaten"
       ],
       "minPersons": 1
+    },
+    "390843": {
+      "last": "2026-11-17T00:41:24.317Z",
+      "count": 0,
+      "rules": [
+        "Gezinnen (minimaal een minderjarig kind)",
+        "Voorrang voor huurders van Stadgenoot die een sociale huurwoning leeg achterlaten  (inkomen maximaal € 81428)",
+        "Voorrang voor huurders van Stadgenoot die een sociale huurwoning leeg achterlaten  (inkomen hoger dan € 81428)",
+        "Voorrang voor huurders die een zelfstandige sociale huurwoning van een corporatie in de Stadsregio Amsterdam leeg achterlaten (inkomen maximaal € 81428)",
+        "Stadsvernieuwingsurgenten",
+        "Loting"
+      ],
+      "minPersons": null
     },
     "390879": {
       "last": "2026-11-17T00:21:21.513Z",
