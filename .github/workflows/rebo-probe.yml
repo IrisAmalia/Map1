@@ -1,0 +1,20 @@
+name: Rebo verkenning
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Pagina"
+        default: "https://www.rebogroep.nl/particulier/ons-aanbod/huren?page=1"
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm i --no-save playwright-core@1.48.0
+      - run: node scripts/rebo-probe.mjs
+        env:
+          URL: ${{ inputs.url }}
