@@ -139,9 +139,10 @@ test("de naam van de corporatie staat in het bericht", () => {
   assert.match(message(p).body, /Eigen Haard \| Sociale huur/);
 });
 
-test("niets in Zuidoost of Nieuw-West, wel in de rest van de stad", () => {
+test("Rochdale: niets in Zuidoost of Nieuw-West, wel in de rest van de stad", () => {
   const wijk = (naam) => {
     const p = base(600, "1250.00");
+    p.Eenheid.Eigenaar = "Rochdale Amsterdam";
     p.Adres.Wijk = naam;
     return p;
   };
@@ -295,7 +296,7 @@ test("Lieven de Key: elk stadsdeel van Amsterdam en ook bij gezinsvoorrang op de
   const gezin = ldk(base(701, "1150.00", { PublicatieModule: "Middenhuur", PublicatieLabel: "Voorrang kleine gezinnen" }));
   assert.equal(matches(gezin), true);
   const ander = base(702, "1150.00", { PublicatieModule: "Middenhuur", Adres: { Straatnaam: "X", Huisnummer: 1, Wijk: "Osdorp-Oost (Nieuw-West)", Woonplaats: "Amsterdam" } });
-  ander.Eenheid.Eigenaar = "Eigen Haard";
+  ander.Eenheid.Eigenaar = "Rochdale Amsterdam";
   assert.equal(skipReason(ander), "stadsdeel Nieuw-West");
 });
 
@@ -342,4 +343,19 @@ test("Lieven de Key: ook 1-kamerwoningen en studio's; andere corporaties blijven
   groot.Eenheid.Eigenaar = "Lieven de Key Amsterdam";
   groot.Eenheid.AantalKamers = 6;
   assert.equal(matches(groot), false);
+});
+
+test("Nieuw-West mag bij Eigen Haard, Stadgenoot en de Alliantie, niet bij Rochdale; Zuidoost bij geen van allen", async () => {
+  const { skipReason } = await import("./filter.mjs");
+  const woning = (eigenaar, wijk) => {
+    const p = base(730, "1225.00", { PublicatieModule: "Middenhuur", Adres: { Straatnaam: "X", Huisnummer: 1, Wijk: wijk, Woonplaats: "Amsterdam" } });
+    p.Eenheid.Eigenaar = eigenaar;
+    return p;
+  };
+  for (const eigenaar of ["Eigen Haard", "Stadgenoot", "de Alliantie Amsterdam"]) {
+    assert.equal(skipReason(woning(eigenaar, "Osdorp-Oost (Nieuw-West)")), "", eigenaar);
+    assert.equal(matches(woning(eigenaar, "Osdorp-Oost (Nieuw-West)")), true, eigenaar);
+    assert.equal(skipReason(woning(eigenaar, "Holendrecht (Zuidoost)")), "stadsdeel Zuidoost", eigenaar);
+  }
+  assert.equal(skipReason(woning("Rochdale Amsterdam", "Slotervaart-Zuid (Nieuw-West)")), "stadsdeel Nieuw-West");
 });

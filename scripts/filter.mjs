@@ -45,9 +45,13 @@ export function ageRestricted(p) {
   return labels.some((l) => AGE_RESTRICTED_LABEL.test(l)) || AGE_RESTRICTED_TARGET.test(String((p.Eenheid || {}).Doelgroep || "").trim());
 }
 
+// Nieuw-West mag wel bij Eigen Haard, Stadgenoot en de Alliantie (en Lieven de Key, die overal mag); Zuidoost nergens.
+export const NIEUW_WEST_OK = /eigen\s?haard|stadgenoot|alliantie|lieven de key/i;
 export function excludedDistrict(p) {
   const m = String((p.Adres || {}).Wijk || "").match(EXCLUDED_DISTRICTS);
-  return m ? m[1] : "";
+  if (!m) return "";
+  if (/nieuw-west/i.test(m[1]) && NIEUW_WEST_OK.test(describe(p).owner)) return "";
+  return m[1];
 }
 
 // Voorrang of eis voor huishoudens van minimaal 3 personen ("3-persoonshuishoudens", "minimaal 3 personen", "3+ personen",
