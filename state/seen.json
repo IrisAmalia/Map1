@@ -20,17 +20,59 @@
     "388292",
     "388374",
     "388577",
+    "388596",
     "388706",
     "389273",
     "389274",
     "389342",
-    "390495"
+    "390495",
+    "390683",
+    "390879"
   ],
   "rejected": [
     "386131",
     "390256",
     "390345",
-    "390394"
+    "390394",
+    "390716",
+    "390843"
   ],
-  "reminders": {}
+  "reminders": {
+    "388596": {
+      "last": "2026-11-17T00:21:04.835Z",
+      "count": 0,
+      "rules": [
+        "Gezinnen (minimaal een minderjarig kind)",
+        "Stadsvernieuwingsurgenten van Eigen Haard",
+        "Voorrang voor sociale huurders Eigen Haard die een woning leeg achterlaten",
+        "Voorrang voor huurders die een zelfstandige sociale huurwoning  van een corporatie met een onbepaalde tijd contract of jongerencontract in de Stadsregio Amsterdam leeg achterlaten",
+        "Voorrang voor woningzoekenden die geen sociale huurwoning of jongerenwoning van een corporatie binnen Stadsregio Amsterdam leeg achterlaten"
+      ],
+      "minPersons": 1
+    },
+    "390683": {
+      "last": "2026-11-17T00:21:09.286Z",
+      "count": 0,
+      "rules": [
+        "Gezinnen (minimaal een minderjarig kind)",
+        "Stadsvernieuwingsurgenten van Eigen Haard",
+        "Voorrang voor sociale huurders Eigen Haard die een woning leeg achterlaten",
+        "Voorrang voor huurders die een zelfstandige sociale huurwoning  van een corporatie met een onbepaalde tijd contract of jongerencontract in de Stadsregio Amsterdam leeg achterlaten",
+        "Voorrang voor woningzoekenden die geen sociale huurwoning of jongerenwoning van een corporatie binnen Stadsregio Amsterdam leeg achterlaten"
+      ],
+      "minPersons": 1
+    },
+    "390879": {
+      "last": "2026-11-17T00:21:21.513Z",
+      "count": 0,
+      "rules": [
+        "Gezinnen (minimaal een minderjarig kind)",
+        "Stadsvernieuwingsurgenten van Eigen Haard",
+        "Voorrang voor sociale huurders Eigen Haard die een woning leeg achterlaten",
+        "Voorrang voor huurders die een zelfstandige sociale huurwoning  van een corporatie met een onbepaalde tijd contract of jongerencontract in de Stadsregio Amsterdam leeg achterlaten",
+        "Voorrang voor woningzoekenden die geen sociale huurwoning of jongerenwoning van een corporatie binnen Stadsregio Amsterdam leeg achterlaten"
+      ],
+      "minPersons": 1
+    }
+  }
 }
