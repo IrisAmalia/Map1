@@ -36,55 +36,5 @@
     "390345",
     "390716"
   ],
-  "reminders": {
-    "388596": {
-      "last": "2026-11-17T00:51:14.852Z",
-      "count": 1,
-      "rules": [
-        "Gezinnen (minimaal een minderjarig kind)",
-        "Stadsvernieuwingsurgenten van Eigen Haard",
-        "Voorrang voor sociale huurders Eigen Haard die een woning leeg achterlaten",
-        "Voorrang voor huurders die een zelfstandige sociale huurwoning  van een corporatie met een onbepaalde tijd contract of jongerencontract in de Stadsregio Amsterdam leeg achterlaten",
-        "Voorrang voor woningzoekenden die geen sociale huurwoning of jongerenwoning van een corporatie binnen Stadsregio Amsterdam leeg achterlaten"
-      ],
-      "minPersons": 1
-    },
-    "390683": {
-      "last": "2026-11-17T00:51:16.715Z",
-      "count": 1,
-      "rules": [
-        "Gezinnen (minimaal een minderjarig kind)",
-        "Stadsvernieuwingsurgenten van Eigen Haard",
-        "Voorrang voor sociale huurders Eigen Haard die een woning leeg achterlaten",
-        "Voorrang voor huurders die een zelfstandige sociale huurwoning  van een corporatie met een onbepaalde tijd contract of jongerencontract in de Stadsregio Amsterdam leeg achterlaten",
-        "Voorrang voor woningzoekenden die geen sociale huurwoning of jongerenwoning van een corporatie binnen Stadsregio Amsterdam leeg achterlaten"
-      ],
-      "minPersons": 1
-    },
-    "390843": {
-      "last": "2026-11-17T00:41:24.317Z",
-      "count": 0,
-      "rules": [
-        "Gezinnen (minimaal een minderjarig kind)",
-        "Voorrang voor huurders van Stadgenoot die een sociale huurwoning leeg achterlaten  (inkomen maximaal € 81428)",
-        "Voorrang voor huurders van Stadgenoot die een sociale huurwoning leeg achterlaten  (inkomen hoger dan € 81428)",
-        "Voorrang voor huurders die een zelfstandige sociale huurwoning van een corporatie in de Stadsregio Amsterdam leeg achterlaten (inkomen maximaal € 81428)",
-        "Stadsvernieuwingsurgenten",
-        "Loting"
-      ],
-      "minPersons": null
-    },
-    "390879": {
-      "last": "2026-11-17T00:51:55.379Z",
-      "count": 1,
-      "rules": [
-        "Gezinnen (minimaal een minderjarig kind)",
-        "Stadsvernieuwingsurgenten van Eigen Haard",
-        "Voorrang voor sociale huurders Eigen Haard die een woning leeg achterlaten",
-        "Voorrang voor huurders die een zelfstandige sociale huurwoning  van een corporatie met een onbepaalde tijd contract of jongerencontract in de Stadsregio Amsterdam leeg achterlaten",
-        "Voorrang voor woningzoekenden die geen sociale huurwoning of jongerenwoning van een corporatie binnen Stadsregio Amsterdam leeg achterlaten"
-      ],
-      "minPersons": 1
-    }
-  }
+  "reminders": {}
 }
