@@ -197,6 +197,12 @@ if (AUDIT) {
 for (const p of all.filter((x) => matches(x) && expired(x) && !known.has(String(x.Id)))) {
   console.log(`Overgeslagen (reageertermijn al voorbij, ${p.EinddatumTijd}): ${describe(p).title} [${p.Id}]`);
 }
+// Dak toont ingelogd alleen je "passend aanbod": woningen waarop jij volgens je profiel mag reageren. Staat een woning
+// daarin, dan geldt dat boven onze eigen lezing van de voorwaarden (die soms een voorrang als eis leest).
+const eligibleByDak = (id) => !!(login && login.items.has(id));
+for (const id of [...rejected]) {
+  if (eligibleByDak(id)) { rejected.delete(id); console.log(`Opnieuw bekijken (staat in je passend aanbod): ${id}`); }
+}
 const fresh = all.filter((p) => matches(p) && !expired(p) && !known.has(String(p.Id)) && !rejected.has(String(p.Id)));
 let checks = 0;
 for (const p of fresh) {
@@ -206,7 +212,11 @@ for (const p of fresh) {
   const detail = await readRules(id);
   const rules = detail ? detail.rules : null;
   const minPersons = detail ? detail.minPersons : null;
-  const problem = detail ? rulesProblem(rules, minPersons, detail.conditions) : "";
+  let problem = detail ? rulesProblem(rules, minPersons, detail.conditions) : "";
+  if (problem && eligibleByDak(id)) {
+    console.log(`Toch melden: ${describe(p).title} [${id}] staat in je passend aanbod op Dak (eigen lezing: ${problem})`);
+    problem = "";
+  }
   if (problem) {
     console.log(`Overgeslagen (spelregels: ${problem}): ${describe(p).title} [${id}] | min. personen ${minPersons} | ${rules.join(" / ")}`);
     rejected.add(id);

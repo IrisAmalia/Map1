@@ -138,7 +138,7 @@ test("de naam van de corporatie staat in het bericht", () => {
   assert.match(message(p).body, /Eigen Haard \| Sociale huur/);
 });
 
-test("Rochdale: niets in Zuidoost of Nieuw-West, wel in de rest van de stad", () => {
+test("Rochdale: niets in Zuidoost, wel in de rest van de stad (ook Nieuw-West)", () => {
   const wijk = (naam) => {
     const p = base(600, "1250.00");
     p.Eenheid.Eigenaar = "Rochdale Amsterdam";
@@ -146,10 +146,10 @@ test("Rochdale: niets in Zuidoost of Nieuw-West, wel in de rest van de stad", ()
     return p;
   };
   // Echte wijken uit de meldingen van 27 oktober.
-  for (const naam of ["Holendrecht (Zuidoost)", "Venserpolder (Zuidoost)", "Overtoomse Veld (Nieuw-West)", "Slotervaart-Zuid (Nieuw-West)", "Bijlmer-Centrum (zuidoost)"]) {
+  for (const naam of ["Holendrecht (Zuidoost)", "Venserpolder (Zuidoost)", "Bijlmer-Centrum (zuidoost)"]) {
     assert.equal(matches(wijk(naam)), false, naam);
   }
-  for (const naam of ["Stadionbuurt (Zuid)", "Volewijck (Noord)", "Waterlandpleinbuurt (Noord)", "Bellamybuurt (West)", "Indische Buurt-Oost (Oost)", "Weesperbuurt/Plantage (Centrum)", "Slotervaart-Zuid", "", "Zuidoost-park"]) {
+  for (const naam of ["Stadionbuurt (Zuid)", "Volewijck (Noord)", "Waterlandpleinbuurt (Noord)", "Bellamybuurt (West)", "Indische Buurt-Oost (Oost)", "Weesperbuurt/Plantage (Centrum)", "Slotervaart-Zuid", "", "Zuidoost-park", "Overtoomse Veld (Nieuw-West)", "Slotervaart-Zuid (Nieuw-West)"]) {
     assert.equal(matches(wijk(naam)), true, naam);
   }
 });
@@ -299,7 +299,8 @@ test("Lieven de Key: elk stadsdeel van Amsterdam en ook bij gezinsvoorrang op de
   assert.equal(matches(gezin), true);
   const ander = base(702, "1150.00", { PublicatieModule: "Middenhuur", Adres: { Straatnaam: "X", Huisnummer: 1, Wijk: "Osdorp-Oost (Nieuw-West)", Woonplaats: "Amsterdam" } });
   ander.Eenheid.Eigenaar = "Rochdale Amsterdam";
-  assert.equal(skipReason(ander), "stadsdeel Nieuw-West");
+  ander.Adres.Wijk = "Holendrecht (Zuidoost)";
+  assert.equal(skipReason(ander), "stadsdeel Zuidoost");
 });
 
 test("buiten de stad Amsterdam wordt overgeslagen, ook bij Lieven de Key", async () => {
@@ -346,19 +347,18 @@ test("Lieven de Key: ook 1-kamerwoningen en studio's; andere corporaties blijven
   assert.equal(matches(groot), false);
 });
 
-test("Nieuw-West mag bij Eigen Haard, Stadgenoot en de Alliantie, niet bij Rochdale; Zuidoost bij geen van allen", async () => {
+test("Nieuw-West mag bij alle corporaties; Zuidoost bij geen van allen (behalve Lieven de Key)", async () => {
   const { skipReason } = await import("./filter.mjs");
   const woning = (eigenaar, wijk) => {
     const p = base(730, "1225.00", { PublicatieModule: "Middenhuur", Adres: { Straatnaam: "X", Huisnummer: 1, Wijk: wijk, Woonplaats: "Amsterdam" } });
     p.Eenheid.Eigenaar = eigenaar;
     return p;
   };
-  for (const eigenaar of ["Eigen Haard", "Stadgenoot", "de Alliantie Amsterdam"]) {
+  for (const eigenaar of ["Eigen Haard", "Stadgenoot", "de Alliantie Amsterdam", "Rochdale Amsterdam", "Ymere"]) {
     assert.equal(skipReason(woning(eigenaar, "Osdorp-Oost (Nieuw-West)")), "", eigenaar);
     assert.equal(matches(woning(eigenaar, "Osdorp-Oost (Nieuw-West)")), true, eigenaar);
     assert.equal(skipReason(woning(eigenaar, "Holendrecht (Zuidoost)")), "stadsdeel Zuidoost", eigenaar);
   }
-  assert.equal(skipReason(woning("Rochdale Amsterdam", "Slotervaart-Zuid (Nieuw-West)")), "stadsdeel Nieuw-West");
 });
 
 test("volglijst: Jollemanhof 216 wordt herkend, andere nummers niet", async () => {
@@ -370,7 +370,7 @@ test("volglijst: Jollemanhof 216 wordt herkend, andere nummers niet", async () =
   assert.equal(watchHit(w, adres(21)), false);
 });
 
-test("Ymere komt door (Zuidoost en Nieuw-West niet), Ymere Parkeren niet", async () => {
+test("Ymere komt door (Zuidoost niet), Ymere Parkeren niet", async () => {
   const { skipReason } = await import("./filter.mjs");
   const ymere = (wijk) => {
     const p = base(750, "1228.07", { PublicatieModule: "Middenhuur", Adres: { Straatnaam: "Jollemanhof", Huisnummer: 216, Wijk: wijk, Woonplaats: "Amsterdam" } });
@@ -378,7 +378,7 @@ test("Ymere komt door (Zuidoost en Nieuw-West niet), Ymere Parkeren niet", async
     return p;
   };
   assert.equal(matches(ymere("Oostelijk Havengebied (Oost)")), true);
-  assert.equal(skipReason(ymere("Osdorp-Oost (Nieuw-West)")), "stadsdeel Nieuw-West");
+  assert.equal(skipReason(ymere("Osdorp-Oost (Nieuw-West)")), "");
   assert.equal(skipReason(ymere("Holendrecht (Zuidoost)")), "stadsdeel Zuidoost");
   const p = ymere("Oostelijk Havengebied (Oost)");
   p.Eenheid.Eigenaar = "Ymere Parkeren";

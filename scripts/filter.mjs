@@ -22,7 +22,7 @@ export const CONTRACT = /onbepaald/i;
 // Stadsdelen waar je niet wilt wonen. Dak zet het stadsdeel tussen haakjes achter de wijk, bijvoorbeeld
 // "Holendrecht (Zuidoost)" of "Slotervaart-Zuid (Nieuw-West)". Alleen het stadsdeel aan het einde telt,
 // dus "Stadionbuurt (Zuid)" of "Slotervaart-Zuid" op zich vallen er niet onder.
-export const EXCLUDED_DISTRICTS = /\(\s*(zuidoost|nieuw-west)\s*\)\s*$/i;
+export const EXCLUDED_DISTRICTS = /\(\s*(zuidoost)\s*\)\s*$/i;
 // Pas vanaf deze netto (kale) huur is het middenhuur of vrije sector: alles tot en met 932,93 is sociaal.
 export const MIN_RENT_EXCLUSIVE_CENTS = 93293;
 // Woningen waarvoor je (minimaal) een kind moet hebben of die voorrang geven aan gezinnen/kinderen slaan we over:
@@ -52,13 +52,10 @@ export function ageRestricted(p) {
   return labels.some((l) => AGE_RESTRICTED_LABEL.test(l)) || AGE_RESTRICTED_TARGET.test(String((p.Eenheid || {}).Doelgroep || "").trim());
 }
 
-// Nieuw-West mag wel bij Eigen Haard, Stadgenoot en de Alliantie (en Lieven de Key, die overal mag); Zuidoost nergens.
-export const NIEUW_WEST_OK = /eigen\s?haard|stadgenoot|alliantie|lieven de key/i;
+// Nieuw-West mag sinds 18 november bij alle corporaties; Zuidoost nergens (EXCLUDED_DISTRICTS).
 export function excludedDistrict(p) {
   const m = String((p.Adres || {}).Wijk || "").match(EXCLUDED_DISTRICTS);
-  if (!m) return "";
-  if (/nieuw-west/i.test(m[1]) && NIEUW_WEST_OK.test(describe(p).owner)) return "";
-  return m[1];
+  return m ? m[1] : "";
 }
 
 // Voorrang of eis voor huishoudens van minimaal 3 personen ("3-persoonshuishoudens", "minimaal 3 personen", "3+ personen",
