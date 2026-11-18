@@ -2,7 +2,8 @@
 
 // Corporaties waarvan we woningen melden. Lieven de Key is jouw eigen corporatie (daar heb je voorrang), de rest is extra.
 // De Dak-naam is bijvoorbeeld "de Alliantie Amsterdam".
-export const OWNER = /lieven de key|rochdale|eigen\s?haard|stadgenoot|alliantie/i;
+// Ymere sinds 18 november (zonder "Ymere Parkeren": dat zijn parkeerplekken).
+export const OWNER = /lieven de key|rochdale|eigen\s?haard|stadgenoot|alliantie|ymere(?!\s*parkeren)/i;
 export const ROOMS = [2, 5];
 // Je eigen corporatie: daarvan wil je alles in de gemeente Amsterdam, in elk stadsdeel en ook bij voorrang voor gezinnen
 // (zolang een huishouden van 1 mag reageren).

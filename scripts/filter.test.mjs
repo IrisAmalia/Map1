@@ -118,7 +118,7 @@ test("woningen van Rochdale, Eigen Haard, Stadgenoot en de Alliantie komen ook d
     p.Eenheid.Eigenaar = eigenaar;
     assert.equal(matches(p), true, eigenaar);
   }
-  for (const eigenaar of ["Ymere", "Woonzorg Amsterdam", "Onze Woning", ""]) {
+  for (const eigenaar of ["Ymere Parkeren", "Woonzorg Amsterdam", "Onze Woning", ""]) {
     const p = base(501, "1250.00");
     p.Eenheid.Eigenaar = eigenaar;
     assert.equal(matches(p), false, eigenaar);
@@ -368,4 +368,19 @@ test("volglijst: Jollemanhof 216 wordt herkend, andere nummers niet", async () =
   assert.equal(watchHit(w, adres(216)), true);
   assert.equal(watchHit(w, adres(2160)), false);
   assert.equal(watchHit(w, adres(21)), false);
+});
+
+test("Ymere komt door (Zuidoost en Nieuw-West niet), Ymere Parkeren niet", async () => {
+  const { skipReason } = await import("./filter.mjs");
+  const ymere = (wijk) => {
+    const p = base(750, "1228.07", { PublicatieModule: "Middenhuur", Adres: { Straatnaam: "Jollemanhof", Huisnummer: 216, Wijk: wijk, Woonplaats: "Amsterdam" } });
+    p.Eenheid.Eigenaar = "Ymere";
+    return p;
+  };
+  assert.equal(matches(ymere("Oostelijk Havengebied (Oost)")), true);
+  assert.equal(skipReason(ymere("Osdorp-Oost (Nieuw-West)")), "stadsdeel Nieuw-West");
+  assert.equal(skipReason(ymere("Holendrecht (Zuidoost)")), "stadsdeel Zuidoost");
+  const p = ymere("Oostelijk Havengebied (Oost)");
+  p.Eenheid.Eigenaar = "Ymere Parkeren";
+  assert.equal(matches(p), false);
 });
