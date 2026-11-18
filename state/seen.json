@@ -28,7 +28,8 @@
     "390495",
     "390683",
     "390843",
-    "390879"
+    "390879",
+    "391273"
   ],
   "rejected": [
     "386131",
@@ -36,6 +37,20 @@
     "390345",
     "390716"
   ],
-  "reminders": {},
+  "reminders": {
+    "391273": {
+      "last": "2026-11-18T01:16:50.974Z",
+      "count": 0,
+      "rules": [
+        "Voorrang voor huishoudens met minimaal drie personen waarvan minimaal   een kind jonger dan 18 jaar",
+        "Stadsvernieuwingsurgenten",
+        "Semi-SV urgenten",
+        "Voorrang voor huurders van Rochdale die een zelfstandige sociale huurwoning leeg achterlaten",
+        "Voorrang voor huurders die een zelfstandige sociale huurwoning  van een corporatie in de Stadsregio Amsterdam leeg achterlaten",
+        "Voorrang voor huurders van Rochdale die een vrije sectorwoning leeg achterlaten"
+      ],
+      "minPersons": null
+    }
+  },
   "watch": {}
 }
