@@ -45,56 +45,7 @@
     "390345",
     "390716"
   ],
-  "reminders": {
-    "389595": {
-      "last": "2026-11-18T01:49:01.028Z",
-      "count": 0,
-      "rules": [
-        "Voorrang voor huurders van Stadgenoot die een sociale huurwoning leeg achterlaten  (inkomen maximaal € 81428)",
-        "Voorrang voor huurders van Stadgenoot die een sociale huurwoning leeg achterlaten  (inkomen hoger dan € 81428)",
-        "Voorrang voor huurders die een zelfstandige sociale huurwoning van een corporatie in de Stadsregio Amsterdam leeg achterlaten (inkomen maximaal € 81428)",
-        "Stadsvernieuwingsurgenten",
-        "Loting"
-      ],
-      "minPersons": null
-    },
-    "390701": {
-      "last": "2026-11-18T01:49:05.453Z",
-      "count": 0,
-      "rules": [
-        "Voorrang voor huurders met een onbepaalde tijd contract die een sociale huurwoning van Ymere leeg achterlaten met een middeninkomen.",
-        "Voorrang voor huurders met een onbepaalde tijd contract die een sociale huurwoning van een deelnemende corporatie leeg achterlaten met een middeninkomen.",
-        "Voorrang voor huurders met een onbepaalde tijd contract die een sociale huurwoning van Ymere leeg achterlaten met een inkomen boven het middeninkomen.",
-        "Voorrang voor huurders met een onbepaalde tijd contract die een sociale huurwoning van een deelnemende corporatie achterlaten met een inkomen boven het middeninkomen.",
-        "Voorrang voor huurders met een campuscontract of een jongerencontract die een sociale huurwoning van Ymere leeg achterlaten met een middeninkomen.",
-        "Voorrang voor huurders met een tijdelijk contract die een sociale huurwoning van Ymere leeg achterlaten met een middeninkomen.",
-        "Middeninkomen Ymere",
-        "Voorrang voor huurders met een campuscontract of een jongerencontract die een sociale huurwoning van Ymere leeg achterlaten met een inkomen boven het middeninkomen.",
-        "Voorrang voor huurders met een tijdelijk contract die een sociale huurwoning van Ymere leeg achterlaten met een inkomen boven het middeninkomen.",
-        "Woningzoekende met een inkomen boven het middeninkomen.",
-        "Plaatsingsdatum en tijd reactie oplopend"
-      ],
-      "minPersons": null
-    },
-    "391291": {
-      "last": "2026-11-18T01:49:09.676Z",
-      "count": 0,
-      "rules": [
-        "Voorrang voor huurders met een onbepaalde tijd contract die een sociale huurwoning van Ymere leeg achterlaten met een middeninkomen.",
-        "Voorrang voor huurders met een onbepaalde tijd contract die een sociale huurwoning van een deelnemende corporatie leeg achterlaten met een middeninkomen.",
-        "Voorrang voor huurders met een onbepaalde tijd contract die een sociale huurwoning van Ymere leeg achterlaten met een inkomen boven het middeninkomen.",
-        "Voorrang voor huurders met een onbepaalde tijd contract die een sociale huurwoning van een deelnemende corporatie achterlaten met een inkomen boven het middeninkomen.",
-        "Voorrang voor huurders met een campuscontract of een jongerencontract die een sociale huurwoning van Ymere leeg achterlaten met een middeninkomen.",
-        "Voorrang voor huurders met een tijdelijk contract die een sociale huurwoning van Ymere leeg achterlaten met een middeninkomen.",
-        "Middeninkomen Ymere",
-        "Voorrang voor huurders met een campuscontract of een jongerencontract die een sociale huurwoning van Ymere leeg achterlaten met een inkomen boven het middeninkomen.",
-        "Voorrang voor huurders met een tijdelijk contract die een sociale huurwoning van Ymere leeg achterlaten met een inkomen boven het middeninkomen.",
-        "Woningzoekende met een inkomen boven het middeninkomen.",
-        "Plaatsingsdatum en tijd reactie oplopend"
-      ],
-      "minPersons": null
-    }
-  },
+  "reminders": {},
   "watch": {
     "Jollemanhof 216": "391274"
   }
