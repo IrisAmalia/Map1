@@ -42,6 +42,7 @@ jobs:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           MAIL_ADDRESS: ${{ secrets.MAIL_ADDRESS }}
+          ALARM_MAIL: ${{ secrets.ALARM_MAIL }}
           TEST_NOTIFICATION: ${{ inputs.test }}
           DRY_RUN: ${{ inputs.dry }}
           SHOW_PAGE: ${{ inputs.show }}

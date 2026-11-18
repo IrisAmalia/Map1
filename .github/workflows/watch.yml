@@ -41,6 +41,7 @@ jobs:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           MAIL_ADDRESS: ${{ secrets.MAIL_ADDRESS }}
+          ALARM_MAIL: ${{ secrets.ALARM_MAIL }}
           MAIL_EXTRA: ${{ secrets.MAIL_EXTRA }}
           DAK_USER: ${{ secrets.DAK_USER }}
           DAK_PASS: ${{ secrets.DAK_PASS }}
@@ -57,6 +58,7 @@ jobs:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           MAIL_ADDRESS: ${{ secrets.MAIL_ADDRESS }}
+          ALARM_MAIL: ${{ secrets.ALARM_MAIL }}
         run: |
           m=$(date -u +%-M)
           if [ $((m % 5)) -eq 0 ]; then node scripts/zeedijk.mjs; else echo "Minuut $m: NV Zeedijk nu niet aan de beurt."; fi

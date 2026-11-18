@@ -26,7 +26,20 @@ const FOCUS = process.env.FOCUS ? new RegExp(process.env.FOCUS, "i") : null;
 // Controle: lees de woningpagina van elke woning die aan de basiseisen voldoet en toon het oordeel. Verstuurt niets.
 const AUDIT = process.env.AUDIT === "true";
 
-async function notify(title, body, url = PAGE_URL, id = "") {
+// Alarmmail: een korte mail met een vast onderwerp naar een apart adres (geheim ALARM_MAIL), alleen bij een nieuwe woning.
+// Een automatisering op je iPhone start bij die mail een timer, en een timer gaat ook af als je telefoon op stil staat.
+const ALARM_MAIL = (process.env.ALARM_MAIL || "").trim();
+const ALARM_SUBJECT = "WONINGALARM";
+async function alarmMail(title, url) {
+  if (!ALARM_MAIL || !GMAIL_APP_PASSWORD || !MAIL_TO || DRY) return "";
+  try {
+    const t = nodemailer.createTransport({ service: "gmail", auth: { user: MAIL_TO, pass: GMAIL_APP_PASSWORD } });
+    await t.sendMail({ from: MAIL_TO, to: ALARM_MAIL, subject: `${ALARM_SUBJECT}: ${title}`, text: url });
+    return "alarmmail verstuurd";
+  } catch (e) { return `alarmmail fout: ${e.message}`; }
+}
+
+async function notify(title, body, url = PAGE_URL, id = "", alarm = false) {
   if (DRY) {
     console.log(`[PROEFMODUS, niet verstuurd] ${title}\n${body}\n${url}`);
     return false; // niet onthouden
@@ -58,6 +71,7 @@ async function notify(title, body, url = PAGE_URL, id = "") {
       results.push("e-mail verstuurd");
     } catch (e) { results.push(`e-mail fout: ${e.message}`); }
   } else results.push("e-mail overgeslagen (GMAIL_APP_PASSWORD of MAIL_ADDRESS ontbreekt)");
+  if (alarm) { const a = await alarmMail(title, url); if (a) results.push(a); }
   console.log("Melding:", results.join(" | "));
   return results.some((r) => r === "e-mail verstuurd" || r === "ntfy 200");
 }
@@ -69,7 +83,7 @@ if (TEST && NTFY_TOPIC) {
   } catch {}
 }
 if (TEST) {
-  const ok = await notify("Test: Dak-melder werkt", "Dit is een testbericht. Zie je dit in ntfy en je mail, dan staat alles goed. Druk gerust op \"Gezien\" om de knop te proberen.", PAGE_URL, "test");
+  const ok = await notify("Test: Dak-melder werkt", "Dit is een testbericht. Zie je dit in ntfy en je mail, dan staat alles goed. Druk gerust op \"Gezien\" om de knop te proberen.", PAGE_URL, "test", true);
   process.exit(ok ? 0 : 1);
 }
 
@@ -225,7 +239,7 @@ for (const p of fresh) {
   console.log("NIEUW (volledige gegevens voor controle):", JSON.stringify(p));
   console.log(`Spelregels van ${id} (min. personen ${minPersons}):`, JSON.stringify(rules));
   const { title, body, url } = message(p, rules, minPersons);
-  const sent = await notify(title, body, url, id);
+  const sent = await notify(title, body, url, id, true);
   if (sent) {
     known.add(id); // alleen onthouden als de melding echt is verstuurd
     reminders[id] = { last: new Date().toISOString(), count: 0, rules, minPersons };
@@ -241,7 +255,7 @@ if (items.size > 0) {
     const id = hit ? String(hit.Id) : null;
     if (id && watch[w.name] !== id) {
       const { body, url } = message(hit, []);
-      const sent = await notify(`Weer online op Dak: ${describe(hit).title}`, `Dit adres staat op je volglijst.\n\n${body}`, url);
+      const sent = await notify(`Weer online op Dak: ${describe(hit).title}`, `Dit adres staat op je volglijst.\n\n${body}`, url, "", true);
       if (sent) watch[w.name] = id;
       console.log(`VOLGLIJST: ${w.name} staat online [${id}]${sent ? ", gemeld" : ", melding mislukt"}`);
     } else if (!id && watch[w.name]) {

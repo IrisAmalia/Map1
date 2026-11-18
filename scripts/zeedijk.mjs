@@ -38,6 +38,15 @@ async function notify(title, body, url = PAGE_URL) {
       results.push("e-mail verstuurd");
     } catch (e) { results.push(`e-mail fout: ${e.message}`); }
   } else results.push("e-mail overgeslagen (GMAIL_APP_PASSWORD of MAIL_ADDRESS ontbreekt)");
+  // Alarmmail (zie watch.mjs): alleen bij een echte nieuwe woning of een test, met het vaste onderwerp WONINGALARM.
+  const ALARM_MAIL = (process.env.ALARM_MAIL || "").trim();
+  if (ALARM_MAIL && GMAIL_APP_PASSWORD && MAIL_TO) {
+    try {
+      const t = nodemailer.createTransport({ service: "gmail", auth: { user: MAIL_TO, pass: GMAIL_APP_PASSWORD } });
+      await t.sendMail({ from: MAIL_TO, to: ALARM_MAIL, subject: `WONINGALARM: ${title}`, text: url });
+      results.push("alarmmail verstuurd");
+    } catch (e) { results.push(`alarmmail fout: ${e.message}`); }
+  }
   console.log("Melding:", results.join(" | "));
   return results.some((r) => r === "e-mail verstuurd" || r === "ntfy 200");
 }
