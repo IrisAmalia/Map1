@@ -28,13 +28,13 @@ test("precies op de grens: 932,93 nee, 932,94 ja", () => {
   assert.equal(matches(base(3, "1250.00", { PublicatieModule: "Vrije sector" })), true);
 });
 
-test("andere corporatie, te weinig kamers of tijdelijk contract worden niet gemeld", () => {
+test("andere corporatie, te veel kamers of tijdelijk contract worden niet gemeld", () => {
   const dur = base(4, "1250.00");
   dur.Eenheid.Eigenaar = "Een Andere Corporatie";
   assert.equal(matches(dur), false);
-  const een = base(5, "1250.00");
-  een.Eenheid.AantalKamers = 1;
-  assert.equal(matches(een), false);
+  const zes = base(5, "1250.00");
+  zes.Eenheid.AantalKamers = 6;
+  assert.equal(matches(zes), false);
   assert.equal(matches(base(6, "1250.00", { ContractVorm: "Tijdelijk contract" })), false);
 });
 
@@ -335,10 +335,10 @@ test("inkomensgrenzen: 71k past, behalve bij een maximum zonder uitzondering voo
   assert.equal(incomeProblem(["Maximuminkomen 2 of meer personen", "Je inkomen is niet hoger dan € 60000"]), "");
 });
 
-test("Lieven de Key: ook 1-kamerwoningen en studio's; andere corporaties blijven vanaf 2 kamers", () => {
+test("1-kamerwoningen en studio's bij alle corporaties; meer dan 5 kamers niet", () => {
   const studio = base(720, "1050.00", { PublicatieModule: "Middenhuur" });
   studio.Eenheid.AantalKamers = 1;
-  assert.equal(matches(studio), false);
+  assert.equal(matches(studio), true);
   studio.Eenheid.Eigenaar = "Lieven de Key Amsterdam";
   assert.equal(matches(studio), true);
   const groot = base(721, "1500.00", { PublicatieModule: "Vrije sector" });

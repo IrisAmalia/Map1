@@ -4,7 +4,7 @@
 // De Dak-naam is bijvoorbeeld "de Alliantie Amsterdam".
 // Ymere sinds 18 november (zonder "Ymere Parkeren": dat zijn parkeerplekken).
 export const OWNER = /lieven de key|rochdale|eigen\s?haard|stadgenoot|alliantie|ymere(?!\s*parkeren)/i;
-export const ROOMS = [2, 5];
+export const ROOMS = [1, 5]; // sinds 18 november ook 1-kamerwoningen en studio's, bij alle corporaties
 // Je eigen corporatie: daarvan wil je alles in de gemeente Amsterdam, in elk stadsdeel en ook bij voorrang voor gezinnen
 // (zolang een huishouden van 1 mag reageren).
 export const OWN = /lieven de key/i;
@@ -124,9 +124,7 @@ export function coreMatches(p) {
   const c = p.Cluster || {};
   const min = e.AantalKamers || c.AantalKamersMin || 0;
   const max = e.AantalKamers || c.AantalKamersMax || 0;
-  // Bij Lieven de Key mogen het ook 1-kamerwoningen en studio's zijn.
-  const fewest = OWN.test(d.owner) ? 1 : ROOMS[0];
-  if (min && (max < fewest || min > ROOMS[1])) return false;
+  if (min && (max < ROOMS[0] || min > ROOMS[1])) return false;
   if (d.contract && !CONTRACT.test(d.contract)) return false;
   // Prijs: alleen vanaf € 932,94. Is de prijs onbekend, dan melden we alleen als het niet als sociale huur is gelabeld.
   if (d.cents !== null) return d.cents > MIN_RENT_EXCLUSIVE_CENTS;
