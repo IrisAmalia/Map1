@@ -47,6 +47,16 @@ async function notify(title, body, url = PAGE_URL) {
       results.push("alarmmail verstuurd");
     } catch (e) { results.push(`alarmmail fout: ${e.message}`); }
   }
+  // Pushover als wekker (zie watch.mjs).
+  const PO_USER = (process.env.PUSHOVER_USER || "").trim(), PO_TOKEN = (process.env.PUSHOVER_TOKEN || "").trim();
+  if (PO_USER && PO_TOKEN) {
+    try {
+      const form = new URLSearchParams({ token: PO_TOKEN, user: PO_USER, title: title.slice(0, 250), message: body.slice(0, 1000),
+        url, url_title: "Pagina openen", priority: "2", retry: "60", expire: "1800", sound: "persistent" });
+      const r = await fetch("https://api.pushover.net/1/messages.json", { method: "POST", body: form });
+      results.push(`pushover ${r.status}`);
+    } catch (e) { results.push(`pushover fout: ${e.message}`); }
+  }
   console.log("Melding:", results.join(" | "));
   return results.some((r) => r === "e-mail verstuurd" || r === "ntfy 200");
 }

@@ -43,6 +43,8 @@ jobs:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           MAIL_ADDRESS: ${{ secrets.MAIL_ADDRESS }}
           ALARM_MAIL: ${{ secrets.ALARM_MAIL }}
+          PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
+          PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN }}
           TEST_NOTIFICATION: ${{ inputs.test }}
           DRY_RUN: ${{ inputs.dry }}
           SHOW_PAGE: ${{ inputs.show }}

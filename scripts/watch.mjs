@@ -39,6 +39,22 @@ async function alarmMail(title, url) {
   } catch (e) { return `alarmmail fout: ${e.message}`; }
 }
 
+// Pushover als wekker: prioriteit 2 ("emergency") herhaalt elke minuut tot je hem bevestigt, en met "Critical Alerts"
+// aan in de Pushover-app gaat hij ook af als je telefoon op stil staat. Alleen bij een nieuwe woning of een test.
+const PUSHOVER_USER = (process.env.PUSHOVER_USER || "").trim();
+const PUSHOVER_TOKEN = (process.env.PUSHOVER_TOKEN || "").trim();
+async function pushover(title, body, url) {
+  if (!PUSHOVER_USER || !PUSHOVER_TOKEN || DRY) return "";
+  try {
+    const form = new URLSearchParams({
+      token: PUSHOVER_TOKEN, user: PUSHOVER_USER, title: title.slice(0, 250), message: body.slice(0, 1000),
+      url, url_title: "Woning openen", priority: "2", retry: "60", expire: "1800", sound: "persistent",
+    });
+    const r = await fetch("https://api.pushover.net/1/messages.json", { method: "POST", body: form });
+    return `pushover ${r.status}${r.ok ? "" : " " + (await r.text()).slice(0, 200)}`;
+  } catch (e) { return `pushover fout: ${e.message}`; }
+}
+
 async function notify(title, body, url = PAGE_URL, id = "", alarm = false) {
   if (DRY) {
     console.log(`[PROEFMODUS, niet verstuurd] ${title}\n${body}\n${url}`);
@@ -71,7 +87,10 @@ async function notify(title, body, url = PAGE_URL, id = "", alarm = false) {
       results.push("e-mail verstuurd");
     } catch (e) { results.push(`e-mail fout: ${e.message}`); }
   } else results.push("e-mail overgeslagen (GMAIL_APP_PASSWORD of MAIL_ADDRESS ontbreekt)");
-  if (alarm) { const a = await alarmMail(title, url); if (a) results.push(a); }
+  if (alarm) {
+    const a = await alarmMail(title, url); if (a) results.push(a);
+    const po = await pushover(title, body, url); if (po) results.push(po);
+  }
   console.log("Melding:", results.join(" | "));
   return results.some((r) => r === "e-mail verstuurd" || r === "ntfy 200");
 }
