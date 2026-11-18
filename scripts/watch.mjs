@@ -140,6 +140,8 @@ if (process.env.DAK_USER && process.env.DAK_PASS && items.size > 0) {
   if (login) {
     for (const [id, p] of login.items) if (!items.has(id)) { items.set(id, p); loginOnly.add(id); }
     console.log(`Ingelogd aanbod: ${login.items.size} advertentie(s), waarvan ${loginOnly.size} (nog) niet openbaar: ${[...loginOnly].map((id) => `${id} ${describe(items.get(id)).title}`).join(", ") || "-"}`);
+    // Volledige ingelogde lijst, om later precies te kunnen zien wanneer elke woning ingelogd verscheen.
+    console.log(`Ingelogd alle: ${[...login.items.values()].map((p) => `${p.Id} ${describe(p).title} | ${describe(p).owner} | ${netRentCents(p) ?? "?"} | ${p.PublicatieDatum || ""}`).join(" ;; ")}`);
   }
 }
 
