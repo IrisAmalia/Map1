@@ -38,7 +38,8 @@
     "391273",
     "391274",
     "391291",
-    "391512"
+    "391512",
+    "391530"
   ],
   "rejected": [
     "384124",
@@ -46,8 +47,27 @@
     "390716",
     "391490"
   ],
-  "reminders": {},
+  "reminders": {
+    "391530": {
+      "last": "2026-11-19T01:22:06.737Z",
+      "count": 0,
+      "rules": [
+        "Voorrang voor huurders met een onbepaalde tijd contract die een sociale huurwoning van Ymere leeg achterlaten met een middeninkomen.",
+        "Voorrang voor huurders met een onbepaalde tijd contract die een sociale huurwoning van een deelnemende corporatie leeg achterlaten met een middeninkomen.",
+        "Voorrang voor huurders met een onbepaalde tijd contract die een sociale huurwoning van Ymere leeg achterlaten met een inkomen boven het middeninkomen.",
+        "Voorrang voor huurders met een onbepaalde tijd contract die een sociale huurwoning van een deelnemende corporatie achterlaten met een inkomen boven het middeninkomen.",
+        "Voorrang voor huurders met een campuscontract of een jongerencontract die een sociale huurwoning van Ymere leeg achterlaten met een middeninkomen.",
+        "Voorrang voor huurders met een tijdelijk contract die een sociale huurwoning van Ymere leeg achterlaten met een middeninkomen.",
+        "Middeninkomen Ymere",
+        "Voorrang voor huurders met een campuscontract of een jongerencontract die een sociale huurwoning van Ymere leeg achterlaten met een inkomen boven het middeninkomen.",
+        "Voorrang voor huurders met een tijdelijk contract die een sociale huurwoning van Ymere leeg achterlaten met een inkomen boven het middeninkomen.",
+        "Woningzoekende met een inkomen boven het middeninkomen.",
+        "Plaatsingsdatum en tijd reactie oplopend"
+      ],
+      "minPersons": null
+    }
+  },
   "watch": {
-    "Jollemanhof 216": null
+    "Jollemanhof 216": "391530"
   }
 }
