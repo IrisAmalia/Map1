@@ -39,7 +39,8 @@
     "391274",
     "391291",
     "391512",
-    "391530"
+    "391530",
+    "391543"
   ],
   "rejected": [
     "384124",
@@ -52,6 +53,25 @@
       "last": "2026-11-19T02:23:54.111Z",
       "count": 2,
       "rules": [
+        "Voorrang voor huurders met een onbepaalde tijd contract die een sociale huurwoning van Ymere leeg achterlaten met een middeninkomen.",
+        "Voorrang voor huurders met een onbepaalde tijd contract die een sociale huurwoning van een deelnemende corporatie leeg achterlaten met een middeninkomen.",
+        "Voorrang voor huurders met een onbepaalde tijd contract die een sociale huurwoning van Ymere leeg achterlaten met een inkomen boven het middeninkomen.",
+        "Voorrang voor huurders met een onbepaalde tijd contract die een sociale huurwoning van een deelnemende corporatie achterlaten met een inkomen boven het middeninkomen.",
+        "Voorrang voor huurders met een campuscontract of een jongerencontract die een sociale huurwoning van Ymere leeg achterlaten met een middeninkomen.",
+        "Voorrang voor huurders met een tijdelijk contract die een sociale huurwoning van Ymere leeg achterlaten met een middeninkomen.",
+        "Middeninkomen Ymere",
+        "Voorrang voor huurders met een campuscontract of een jongerencontract die een sociale huurwoning van Ymere leeg achterlaten met een inkomen boven het middeninkomen.",
+        "Voorrang voor huurders met een tijdelijk contract die een sociale huurwoning van Ymere leeg achterlaten met een inkomen boven het middeninkomen.",
+        "Woningzoekende met een inkomen boven het middeninkomen.",
+        "Plaatsingsdatum en tijd reactie oplopend"
+      ],
+      "minPersons": null
+    },
+    "391543": {
+      "last": "2026-11-19T02:52:55.124Z",
+      "count": 0,
+      "rules": [
+        "Voorrang voor gezinnen met minimaal 1 kind(eren)",
         "Voorrang voor huurders met een onbepaalde tijd contract die een sociale huurwoning van Ymere leeg achterlaten met een middeninkomen.",
         "Voorrang voor huurders met een onbepaalde tijd contract die een sociale huurwoning van een deelnemende corporatie leeg achterlaten met een middeninkomen.",
         "Voorrang voor huurders met een onbepaalde tijd contract die een sociale huurwoning van Ymere leeg achterlaten met een inkomen boven het middeninkomen.",
